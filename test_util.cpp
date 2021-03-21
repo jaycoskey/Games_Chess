@@ -4,19 +4,30 @@
 #include <set>
 #include <sstream>
 
+#include "geometry.h"
+
+
+using std::cout;
+
 
 int main() {
-    std::set<Dir> orthoDirs  = signedPerms(Dir(1,0));
-    std::set<Dir> diagDirs   = signs(Dir(1,1));
-    std::set<Dir> adjDirs    = getUnion(orthoDirs, diagDirs);
+    Dirs orthoDirs  = dirSignedPerms(Dir(1,0));
+    Dirs diagDirs   = dirSigns(Dir(1,1));
+    Dirs allDirs    = getUnion(orthoDirs, diagDirs);
 
-    std::set<Dir> knightDirs = signedPerms(Dir(1,2));
+    Dirs knightDirs = dirSignedPerms(Dir(1,2));
 
-    std::cout << "orthoDirs="  << show(orthoDirs)  << std::endl;
-    std::cout << "diagDirs="   << show(diagDirs)   << std::endl;
-    std::cout << "adjDirs="    << show(adjDirs)    << std::endl;
+    assert(orthoDirs.size()  == 4);
+    assert(diagDirs.size()   == 4);
+    assert(allDirs.size())   == 8);
 
-    std::cout << "knightDirs=" << show(knightDirs) << std::endl;
+    assert(knightDirs.size() == 4);
+
+    cout << "orthoDirs="  << showSet(orthoDirs) << "\n";
+    cout << "diagDirs="   << showSet(diagDirs)  << "\n";
+    cout << "adjDirs="    << showSet(adjDirs)   << "\n";
+
+    cout << "knightDirs=" << showSet(knightDirs) << "\n";
 
     return 0;
 }

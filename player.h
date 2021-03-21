@@ -3,21 +3,27 @@
 #pragma once
 
 #include "util.h"
+#include "geometry.h"
+
+using std::string;
 
 
 class Board;
 
-// TODO: Privacy
 // TODO: User interactivity
 class Player {
 public:
-    Color getColor() { return color; }
-    const std::string& getName() const { return name; }
-    const Dir& getForward() const { return forward; }
+    Player(Color color, const Dir& forward, const string& name)
+        : _color{color}
+        , _forward{forward}
+        , _name{name}
+        {}
+    Color color() const { return _color; }
+    const Dir& forward() const { return _forward; }
+    const std::string& name() const { return _name; }
 
-    Color  color; 
 private:
-    std::string name; 
-    Dir    forward;
-    // friend struct std::hash<Board>;
+    Color       _color;
+    Dir         _forward;
+    std::string _name;
 };
