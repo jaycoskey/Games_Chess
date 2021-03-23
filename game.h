@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <tuple>
 #include <vector>
@@ -15,26 +16,45 @@
 using std::cout;
 using std::map;
 
-
+// Note: The FIDE laws for the 50 Move Rule mention "50 moves by each player",
+//       by the law is interpreted as meaning 50 moves total.
 enum class GameState {
     InPlay,
-    Tie,
-    WinBlack,
-    WinWhite
+    // Draw_Agreement,
+    // Draw_Clock,             // Both players exceed their time allotment.
+    // Draw_DeadPosition,      // Insufficient material to lead to checkmate (e.g., two Kings).
+    Draw_Move50Rule,           // 50 moves w/ no captures or Pawn moves. Must be claimed by player on turn.
+    Draw_Move75Rule,           // 75 moves w/ no captures or Pawn moves. Automatic.
+    Draw_Stalemate,            // No legal moves available.
+    Draw_ThreefoldRepetition,  // 3x repetition of Board w/ same Player to move.
+
+    // WinBlack_Agreement,
+    WinBlack_Checkmate,
+    // WinBlack_Clock,
+
+    // WinWhite_Agreement,
+    WinWhite_Checkmate
+    // WinWhite_Clock,
 };
 
-// TODO: Privacy
+// TODO: Get Player names at startup.
+// TODO: Implement check, checkmate, and draw detection.
+// TODO: Announce winner at end of Game.
+// TODO: Any user-selectable rule variations (e.g., Checker-Pawn Chess)?
 class Game {
 public:
     Game();
 
-    void execMove(Board& board, const Move& move);
-    MoveRule getMoveRule(PieceType pieceType);
-    void play();
+    void        setPlayerName(Color color, const string& name) { color2PlayerName[color] = name; }
+    CaptureRule getCaptureRule(PieceType pieceType);
+    MoveRule    getMoveRule(PieceType pieceType);
+    void        execMove(Board& board, const Move& move);
+    void        unexecMove(Board& board, const Move& move);
+
+    void     play();
 
 private:
-    std::tuple<bool, GameState> getGameState(const Player& playerCompletingMove);
-    void initMoveRules();
+    std::tuple<bool, GameState> getGameState(Color colorCompletingMove);
     void initPlayers();
 
     Board board;
@@ -44,28 +64,20 @@ private:
     int moveCount = 0;
     int movesSinceCapture = 0;
     Moves moveHistory;
-    PieceType2MoveRule pieceType2MoveRule;
+
+    const map<Color, Dir> color2Forward
+        { {Color::Black, Dir{0, -1}}
+        , {Color::White, Dir{0,  1}}
+        };
+    map<Color, string> color2PlayerName;
 };
 
 // ---------- Public members
 
 Game::Game()
 {
-    // Init board not needed---use default
-    initMoveRules();
+    // Init board not needed---use default layout
     initPlayers();
-}
-
-void Game::execMove(Board& board, const Move& move)
-{
-    // TODO: Support complex moves (en passant, castling, Pawn promotion, etc.
-    PieceP movedPieceP = board.removePieceFrom(move.from());
-    board.addPieceTo(movedPieceP, move.to());
-}
-
-MoveRule Game::getMoveRule(PieceType pieceType)
-{
-    return pieceType2MoveRule.at(pieceType);
 }
 
 void Game::play()
@@ -73,64 +85,29 @@ void Game::play()
     bool     isGameOver = false;
     GameState endState;
 
-    for (int round_num = 0; ;++round_num) {
-        for (auto& player : players) {
-            cout << board << "\n";
+    for (int move_num = 1; ;++move_num) {
+        for (auto& color : colors) {
+            cout << board;
 
-            const Pos2Moves& validPlayerMoves = getValidPlayerMoves(pieceType2MoveRule, board, player.color());
-            Move move = getPlayerMove(board, player, validPlayerMoves);
-            execMove(board, move);
-            std::tie(isGameOver, endState) = getGameState(player);
+            const Pos2Moves& validPlayerMoves = getValidPlayerMoves(board, color);
+            Move move = getPlayerMove(board, color, validPlayerMoves);
+            move.apply(board);
+            std::tie(isGameOver, endState) = getGameState(color);
             if (endState != GameState::InPlay) { break; }
         }
         if (endState != GameState::InPlay) { break; }
     }
-    // TODO: Announce winner
 }
 
 // ---------- private Game members
 
-std::tuple<bool, GameState> Game::getGameState(const Player& playerCompletingMove)
+std::tuple<bool, GameState> Game::getGameState(Color color)
 {
-    // TODO:  isCheckmate
-    // TODO:  isStalemate [multiple forms]
-    bool      isGameOver = false;   // TODO
-    GameState gameState  = GameState::InPlay;  // TODO
+    bool      isGameOver = false;
+    GameState gameState  = GameState::InPlay;
     return std::make_tuple(isGameOver, gameState);
-}
-
-void Game::initMoveRules()
-{
-    // TODO: Assert the map has not been initialized
-    pieceType2MoveRule[PieceType::King]   = [&](const auto& b, const auto c, const auto& pos)
-                                              { return move_steps( b, c, pos, PieceType::King,   allDirs); };
-    pieceType2MoveRule[PieceType::Queen]  = [&](const auto& b, const auto c, const auto& pos)
-                                              { return move_slides(b, c, pos, PieceType::Queen,  allDirs); };
-    pieceType2MoveRule[PieceType::Rook]   = [&](const auto& b, const auto c, const auto& pos)
-                                              { return move_slides(b, c, pos, PieceType::Rook,   orthoDirs); };
-    pieceType2MoveRule[PieceType::Bishop] = [&](const auto& b, const auto c, const auto& pos)
-                                              { return move_slides(b, c, pos, PieceType::Bishop, diagDirs); };
-    pieceType2MoveRule[PieceType::Knight] = [&](const auto& b, const auto c, const auto& pos)
-                                              { return move_leaps( b, c, pos, PieceType::Knight, knightDirs); };
-    // TODO: pieceType2MoveRule[PieceType::Pawn]   = pawnMoveRule;
 }
 
 void Game::initPlayers()
 {
-    players.emplace(players.end(), Color::White, Dir(0,  1), "Amy");
-    players.emplace(players.end(), Color::Black, Dir(0, -1), "Bob");
-}
-
-// ---------- Game non-member functions
-
-const Moves& pawnMoveRule(const Board& b, const Player& p, const Pos& pos)
-{
-    Moves result{};
-    // TODO: if (relRow(pos) < BOARD_ROWS - 1) { result.insert(step(p.getForward())); }  // Advance 1 space
-    // TODO: if (relRow(pos) == 2) { result.insert(step(p.getForward(), 2)); }           // Advance 2 spaces
-    // TODO: if (piece at FL) { result.insert(move + capture); }                // Capture FL
-    // TODO: if (piece at FR) { result.insert(move + capture); }                // Capture FL
-    // TODO: if (is en passant valid) { capture en passant }                // Capture FL
-    // TODO: if (relRow(pos) == BOARD_ROWS) { append pawn promotion to each item in result } // Pawn promotion
-    return result;
 }
