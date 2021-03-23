@@ -9,11 +9,11 @@
 // #include "player.h"
 
 using std::string;
-using std::map;
+using std::map, std::vector;
 
 
 enum class PieceType {
-    NoType,
+    None,
     King,
     Queen,
     Rook,
@@ -21,16 +21,20 @@ enum class PieceType {
     Knight,
     Pawn
 };
+const vector<PieceType> pieceTypes{
+    PieceType::King, PieceType::Queen, PieceType::Rook
+    , PieceType::Bishop, PieceType::Knight, PieceType::Pawn
+    };
 
 const string& showPieceType(PieceType pieceType) {
     static const map<PieceType, string> pieceType2cstr {
-        { PieceType::King,    string{"K"} },
-        { PieceType::Queen,   string{"Q"} },
-        { PieceType::Rook,    string{"R"} },
-        { PieceType::Bishop,  string{"B"} },
-        { PieceType::Knight,  string{"N"} },
-        { PieceType::Pawn,    string{"P"} },
-        { PieceType::NoType,  string{" "} }
+        { PieceType::King,   string{"K"} },
+        { PieceType::Queen,  string{"Q"} },
+        { PieceType::Rook,   string{"R"} },
+        { PieceType::Bishop, string{"B"} },
+        { PieceType::Knight, string{"N"} },
+        { PieceType::Pawn,   string{"P"} },
+        { PieceType::None,   string{" "} }
     };
     return pieceType2cstr.find(pieceType)->second;
 }
@@ -40,8 +44,7 @@ class Board;
 class Piece {
 public:
     Piece(Color color, PieceType pieceType, Short index)
-        : _color{color}, _pieceType{pieceType}, _index{index},
-          _pos{index},
+        : _color{color}, _pieceType{pieceType}, _pos{index},
           _lastMoveIndex{0}
         {}
 
@@ -54,12 +57,13 @@ public:
     Pos   pos() const { return _pos; }
     Col   col() const { return _pos.x; }
     Row   row() const { return _pos.y; }
-    Short index() const { return _index; }
+    Short index() const { return _pos.x + _pos.y * BOARD_COLS; }
 
-    Col   relCol()  const { return isWhite() ? _pos.x : BOARD_COLS - 1 - _pos.x; }
-    Col   relRow()  const { return isWhite() ? _pos.y : BOARD_ROWS - 1 - _pos.y; }
-
-    void  setPos(Pos pos) { _pos = pos; }
+    void moveTo(const Pos& pos)
+    {
+        _pos.setPos(pos);
+    }
+    void setPieceType(PieceType pieceType) { _pieceType = pieceType; }
 
     bool operator<(const Piece& other) { return _pos < other.pos(); }
 
@@ -68,7 +72,6 @@ public:
 private:
     Color     _color;
     PieceType _pieceType;
-    Short     _index;
 
     Pos       _pos;
     Short     _lastMoveIndex;  // Convention: Zero before first move
@@ -79,7 +82,7 @@ private:
 ostream& operator<<(ostream& os, const Piece& piece) {
     os << "Piece{"
        << showColor(piece._color) << showPieceType(piece._pieceType)
-       << '@' << piece._pos << "=#" << piece._index
+       << '@' << piece._pos << "=#" << piece.index()
        << "}\n";
     return os;
 }

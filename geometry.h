@@ -34,6 +34,7 @@ struct Dir {
     Col x;
     Row y;
 
+    Dir operator+(const Dir& d) const { return Dir(x + d.x, y + d.y); }
     bool operator<(const Dir& other) const;
 
     friend ostream& operator<<(ostream& os, const Dir& dir);
@@ -77,11 +78,11 @@ Dirs dirSignedPerms(const Dir& dir)
 
 // ---------- Direction non-member values
 
-Dirs orthoDirs  = dirSignedPerms(Dir(1,0));
-Dirs diagDirs   = dirSigns(Dir(1,1));
-Dirs allDirs    = getUnion(orthoDirs, diagDirs);
+Dirs orthoDirs   = dirSignedPerms(Dir(1,0));
+Dirs diagDirs    = dirSigns(Dir(1,1));
+Dirs allDirs     = getUnion(orthoDirs, diagDirs);
 
-Dirs knightDirs = dirSignedPerms(Dir(1,2));
+Dirs knightDirs  = dirSignedPerms(Dir(1,2));
 
 // ---------- Position
 
@@ -94,11 +95,18 @@ struct Pos {
     Col x;
     Row y;
 
-    Pos operator+(const Dir& d) const;
+    Pos operator+(const Dir& d) const { return Pos(x + d.x, y + d.y); }
     bool operator<(const Pos& other) const;
     bool operator==(const Pos& other) const;
-    void setPos(const Pos& other);
-    Short index() const;
+
+    Pos fromRelPos(Color c) const { return Pos(toRelCol(c), toRelRow(c)); }
+
+    Col   toRelCol(Color c) const { return c == Color::White ? x : BOARD_COLS - 1 - x; }
+    Row   toRelRow(Color c) const { return c == Color::White ? y : BOARD_ROWS - 1 - y; }
+    void  setPos(const Pos& other);
+    Short index() const { return x + BOARD_COLS * y; }
+
+    const string getAlgNotation() const;
 
     friend ostream& operator<<(ostream& os, const Pos& pos);
 };
@@ -109,12 +117,14 @@ ostream& operator<<(ostream& os, const Pos& pos)
     return os;
 }
 
-// ---------- public Position methods
-
-Pos Pos::operator+(const Dir& d) const
+const string Pos::getAlgNotation() const
 {
-    return Pos(x + d.x, y + d.y);
+    ostringstream oss;
+    oss << char((unsigned char)('a') + x) << y + 1;
+    return oss.str();
 }
+
+// ---------- public Position methods
 
 bool Pos::operator<(const Pos& other) const
 {
@@ -127,13 +137,14 @@ bool Pos::operator==(const Pos& other) const
     return x == other.x && y == other.y;
 }
 
-Short Pos::index() const
-{
-    return x + BOARD_COLS * y;
-}
-
 void Pos::setPos(const Pos& other)
 {
     x = other.x;
     y = other.y;
+}
+
+// ---------- Non-member Position methods
+
+bool isPawnInitialPosition(Color color, const Pos& pos) {
+    return pos.toRelRow(color) == 1;
 }

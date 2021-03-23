@@ -1,7 +1,6 @@
 CPPFLAGS = -std=c++17
 CPPFLAGS += -Wall -Wextra -Wunused
 CPPFLAGS += -g
-CPPFLAGS += -Qunused-arguments
 # CPPFLAGS += -w
 
 PROG = chess
