@@ -26,9 +26,10 @@ Implementation outline:
     * struct Pos           // x/y vs indexes? Prob x/y short-term; indexes long-term (performance).
     * struct Dir           // Dir != Pos. Pos+Dir and Dir+Dir are defined; Pos+Pos is not.
   * Move
-    * class Move
-    * enum MoveType        // Simple, Castle (K/Q), EnPassant, PawnPromotion
-    * Move types           // In addition to piece Moves: Concede, Draw, etc.
+    * CaptureRule          // Per-PieceType test for whether a piece (e.g., King) is being attacked.
+    * MoveRule             // Per-PieceType Move generator from Board/Color/Pos.
+    * MoveType             // Simple, Castle (K/Q), EnPassant, PawnPromotion, etc.
+    * Move                 // apply & applyUndo
     * Move support         // General move function(s) + attacking function(s) (for Check detection)
     * getValidPlayerMoves  // Get list of valid Moves, grouped by 'from' position for easy display.
     * getPlayerMove        // Query players for their Moves. Parse input.
