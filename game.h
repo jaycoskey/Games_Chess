@@ -45,7 +45,7 @@ class Game {
 public:
     Game();
 
-    void        setPlayerName(Color color, const string& name) { color2PlayerName[color] = name; }
+    void        setPlayerName(Color color, const string& name) { _color2PlayerName[color] = name; }
     CaptureRule getCaptureRule(PieceType pieceType);
     MoveRule    getMoveRule(PieceType pieceType);
     void        execMove(Board& board, const Move& move);
@@ -54,22 +54,21 @@ public:
     void     play();
 
 private:
-    std::tuple<bool, GameState> getGameState(Color colorCompletingMove);
+    GameState getGameState(Color colorCompletingMove) const;
     void initPlayers();
 
-    Board board;
-    Players players;
+    Board _board;
+    Players _players;
 
-    map<Hash, int> boardLayoutRepetitionCount;
-    int moveCount = 0;
-    int movesSinceCapture = 0;
-    Moves moveHistory;
+    map<Hash, int> _boardLayoutRepetitionCount;
+    int _movesSinceCapture = 0;
+    Moves _moveHistory;
 
     const map<Color, Dir> color2Forward
         { {Color::Black, Dir{0, -1}}
         , {Color::White, Dir{0,  1}}
         };
-    map<Color, string> color2PlayerName;
+    map<Color, string> _color2PlayerName;
 };
 
 // ---------- Public members
@@ -80,34 +79,94 @@ Game::Game()
     initPlayers();
 }
 
+void announceGameEnd(const GameState gameState);
+
 void Game::play()
 {
-    bool     isGameOver = false;
-    GameState endState;
+    bool isGameInPlay = true;
+    int  move_num = 0;
 
-    for (int move_num = 1; ;++move_num) {
+    while (isGameInPlay) {
+        move_num++;
         for (auto& color : colors) {
-            cout << board;
+            cout << _board;
 
-            const Pos2Moves& validPlayerMoves = getValidPlayerMoves(board, color);
-            Move move = getPlayerMove(board, color, validPlayerMoves);
-            move.apply(board);
-            std::tie(isGameOver, endState) = getGameState(color);
-            if (endState != GameState::InPlay) { break; }
+            const Pos2Moves& validPlayerMoves = getValidPlayerMoves(_board, color);
+            Move move = getPlayerMove(_board, color, validPlayerMoves);
+            move.apply(_board);
+            GameState gameState = getGameState(color);
+            if (gameState == GameState::InPlay) {
+                continue;
+            }
+            announceGameEnd(gameState);
+            isGameInPlay = false;
+            break;
         }
-        if (endState != GameState::InPlay) { break; }
     }
 }
 
 // ---------- private Game members
 
-std::tuple<bool, GameState> Game::getGameState(Color color)
+// TODO: Test for Draw.
+GameState Game::getGameState(Color colorPlayed) const
 {
-    bool      isGameOver = false;
-    GameState gameState  = GameState::InPlay;
-    return std::make_tuple(isGameOver, gameState);
+
+    if (_board.movesSinceLastPawnMoveOrCapture() >= 50) {
+        return GameState::Draw_Move50Rule;
+    }
+
+    // Test for checkmate
+    Color opponentColor = opponent(colorPlayed);
+    const Piece& king = *(_board.getKingP(opponentColor));
+    if (!canBeCaptured(_board, king)) {
+        return GameState::InPlay;
+    } 
+    const Pos2Moves& validPlayerMoves = getValidPlayerMoves(_board, colorPlayed);
+    for (const auto& [from, moves] : validPlayerMoves) {
+        for (const Move& move : moves) {
+            move.apply(const_cast<Board&>(_board));  // Temp board alteration
+            bool canEscape = !isInCheck(_board, colorPlayed);
+            move.applyUndo(const_cast<Board&>(_board));  // Undo temp board alteration
+            if (canEscape) {
+                return GameState::InPlay;
+            }
+        }
+    }
+    return colorPlayed == Color::Black
+                              ? GameState::WinBlack_Checkmate
+                              : GameState::WinWhite_Checkmate;
 }
 
 void Game::initPlayers()
 {
+}
+
+void announceGameEnd(const GameState gameState)
+{
+    if (gameState != GameState::InPlay) {
+        cout << "Game is over: ";
+        switch (gameState)
+        {
+            case GameState::Draw_Move50Rule:
+                cout << "Draw!";
+                break;
+            case GameState::Draw_Move75Rule:
+                cout << "Draw!";
+                break;
+            case GameState::Draw_Stalemate:
+                cout << "Draw!";
+                break;
+            case GameState::Draw_ThreefoldRepetition:
+                cout << "Draw!";
+                break;
+            case GameState::WinBlack_Checkmate:
+                cout << "Black Wins!";
+                break;
+            case GameState::WinWhite_Checkmate:
+                cout << "White Wins!";
+                break;
+            default:
+                throw new std::invalid_argument("Unrecognized GameState");
+        }
+    }
 }
