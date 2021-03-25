@@ -10,6 +10,8 @@
 #include "piece.h"
 #include "board.h"
 
+#include "logger.h"
+
 using std::string, std::ostream;
 using std::cin, std::cout, std::ostringstream;
 
@@ -37,33 +39,35 @@ public:
     static CaptureRule getCaptureRule(PieceType pieceType);
     static MoveRule getMoveRule(PieceType pieceType);
 
-    Move(Color color, PieceType pieceType, Pos from, Pos to
+    Move(Color color, PieceType pieceType, const Pos& from, const Pos& to
             , OptPieceP oCapturedP=std::nullopt
+            , bool isPawnMove=false
             , bool isEnPassant=false
             , PieceType promotedType=PieceType::None
         )
         : _color{color}, _pieceType{pieceType}, _from{from}, _to{to}
             , _oCapturedP{oCapturedP}
-    {}
+    { }
 
-    Move(Color color, PieceType pieceType, Pos from, Pos to
+    Move(Color color, PieceType pieceType, const Pos& from, const Pos& to
             , const PieceP& capturedP
         ) : Move(color, pieceType, from, to, std::make_optional<PieceP>(capturedP))
-    {}
+    { }
 
-    Color      color()      const { return _color;     }
-    PieceType  pieceType()  const { return _pieceType; }
-    const Pos& from()       const { return _from;      }
-    const Pos& to()         const { return _to;        }
+    Color      color()     const { return _color;     }
+    PieceType  pieceType() const { return _pieceType; }
+    const Pos& from()      const { return _from;      }
+    const Pos& to()        const { return _to;        }
 
     // CheckType  checkType()  const { return _checkType; }
 
     const OptPieceP oCapturedP() const { return _oCapturedP; }
-    bool isCapture()   const { return _oCapturedP != std::nullopt; }
-    bool isPromotion() const { return _promotedType != PieceType::None; }
+    bool isCapture()             const { return _oCapturedP != std::nullopt; }
+    bool isPawnMoveOrCapture()   const { return _isPawnMove || _oCapturedP != std::nullopt; }
+    bool isPromotion()           const { return _promotedType != PieceType::None; }
 
-    void apply(Board& board) const;
-    void applyUndo(Board& board) const;
+    void apply(Board& board)      const;
+    void applyUndo(Board& board)  const;
     const string getAlgNotation() const;
 
     bool operator==(const Move& other) const;
@@ -80,9 +84,8 @@ private:
     Pos       _from;
     Pos       _to;
 
-    // CheckType _checkType;
-
     OptPieceP _oCapturedP;
+    bool      _isPawnMove;
     bool      _isEnPassant;
     PieceType _promotedType;
 
@@ -204,7 +207,7 @@ PieceType2MoveRule Move::createMoveRules()
 }
 
 ostream& operator<<(ostream& os, const Move& move) {
-    os << "(from=" << move._from << ", to=" << move._to << ')';
+    os << move._from << "--->" << move._to;
     return os;
 }
 
@@ -219,6 +222,7 @@ bool Move::operator==(const Move& other) const
 void Move::apply(Board& board) const
 {
     board.movePiece(_from, _to);
+    board.currentMoveIndex_incr();
 }
 
 void Move::applyUndo(Board& board) const
@@ -248,7 +252,8 @@ void Move::applyUndo(Board& board) const
     }
 
     // Restore Piece location
-    board.pieceAt(_to)->get()->moveTo(_from);
+    // board.pieceAt(_to)->get()->moveTo(_from);
+    board.movePiece(_to, _from);
 
     // Restore captured piece
     if (moveType == MoveType::EnPassant) {
@@ -272,20 +277,21 @@ void Move::applyUndo(Board& board) const
         const Pos& to   = Pos(0, 0).fromRelPos(_color);
         board.pieceAt(from)->get()->moveTo(to);
     }
+    board.currentMoveIndex_decr();
 }
 
-// bool canBeCaptured(Board& b, Color c, const Pos& targetPos)
-// {
-//     const Piece& target = *(b.pieceAt(targetPos)->get());
-//     auto& attackers = b.color2PiecePs.at(opponent(c));
-//     for (const PieceP& attackerP : attackers) {
-//         CaptureRule captureRule = Move::getCaptureRule(attackerP->pieceType());
-//         if (captureRule(b, *attackerP, target)) {
-//             return true;
-//         }
-//     }
-//     return false;
-// }
+bool canBeCaptured(const Board& b, const Piece& target)
+{
+    Color c = target.color();
+    auto& attackers = b.color2PiecePs.at(opponent(c));
+    for (const PieceP& attackerP : attackers) {
+        CaptureRule captureRule = Move::getCaptureRule(attackerP->pieceType());
+        if (captureRule(b, *attackerP, target)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 const string Move::getAlgNotation() const
 {
@@ -355,17 +361,24 @@ const Move getPlayerMove(
     }
 }
 
-bool doesMoveSelfCheck(const Board& board, Color color, const Move& move) noexcept {
-    move.apply(const_cast<Board&>(board));  // Temp board alteration
-    bool result = false;
+bool isInCheck(const Board& board, Color color) noexcept {
     const Piece& king = *(board.getKingP(color));
+    assert(king.pieceType() == PieceType::King);
     for (const PieceP& attackerP : board.color2PiecePs.at(opponent(color))) {
         CaptureRule canCapture = Move::getCaptureRule(attackerP->pieceType());
         if (canCapture(board, *attackerP, king)) {
-            result = true;
-            break;
+            logger.debug("    ->->", showColor(color), " king is being attacked by ", *attackerP);
+            return true;
         }
     }
+    return false;
+}
+
+bool doesMoveSelfCheck(const Board& board, Color color, const Move& move) noexcept {
+    logger.info("        doesMoveSelfCheck: pushing move: ", move);
+    move.apply(const_cast<Board&>(board));  // Temp board alteration
+    bool result = isInCheck(board, color);
+    logger.info("        doesMoveSelfCheck: popping move: ", move, ". Does ", result ? "" : "not ", "self-check.");
     move.applyUndo(const_cast<Board&>(board));  // Undo temp board alteration
     return result;
 }
@@ -374,11 +387,15 @@ bool doesMoveSelfCheck(const Board& board, Color color, const Move& move) noexce
 const Pos2Moves getValidPlayerMoves(const Board& board, const Color& color)
 {
     Pos2Moves result;
+    
+    logger.info("getValidPlayerMoves: ====================");
     for (const PieceP& pieceP : board.piecesWithColor(color)) {
         MoveRule moveRule = Move::getMoveRule(pieceP->pieceType());
         const Pos& from = pieceP->pos();
+        logger.info("getValidPlayerMoves: Looking at piece ", *pieceP);
         for (Move move : moveRule(board, pieceP->color(), from)) {
             if (!doesMoveSelfCheck(board, color, move)) {
+                logger.info("     ==> getValidPlayerMoves: Adding move of ", *pieceP, " to result");
                 result[from].insert(result[from].end(), move);
             }
         }
@@ -409,7 +426,13 @@ Moves getValidPieceMoves(
                     break;
                 }
                 // Non-capture move
+                int beforeSize = result.size();
+                logger.info("    getValidPieceMoves: Valid move: Point="
+                        , showColor(color), showPieceType(pieceType)
+                        , "_@_", pos, "--->", dest);
                 result.emplace(result.end(), color, pieceType, pos, dest);  // Capture move
+                int afterSize = result.size();
+                assert(afterSize = beforeSize + 1);
             } else {
                 if (captureAbility == CaptureAbility::MustNotCapture) {
                     break;
@@ -418,9 +441,24 @@ Moves getValidPieceMoves(
                     break;  // Cannot capture one's own piece
                 }
                 // Capture move
+                logger.info(" getValidPieceMoves: Valid x-move: Point="
+                        , showColor(color), showPieceType(pieceType)
+                        , '@', pos, "-->", dest
+                        );
+                int beforeSize = result.size();
                 result.emplace(result.end(), color, pieceType, pos, dest);  // Non-capture move
+                int afterSize = result.size();
+                assert(afterSize = beforeSize + 1);
                 break;  // Cannot move past opponent's piece
             }
+        }
+    }
+    {
+        if (result.size() > 0) {
+            logger.info("    ==> getValidPieceMoves: returning result for "
+                    , showColor(color), showPieceType(pieceType)
+                    , "_@_", pos, " (", result.size(), " moves)"
+                    ); 
         }
     }
     return result;
@@ -512,7 +550,19 @@ const Moves pawnMoveRule(const Board& b, Color c, const Pos& pos)
                             );
     result.insert(result.end(), captureMoves.begin(), captureMoves.end());
 
-    // En passant capture
-    // TODO: if (is en passant possible) { add en passant move }
+    Dirs lateralDirs = Dirs{forward + Dir{-1,0}, forward + Dir{1, 0}};
+    for (const Dir& lateralDir : lateralDirs) {
+        const Pos& opponentPos = pos + lateralDir;
+        const OptPieceP& opponentPiece = b.pieceAt(opponentPos);
+        if (opponentPiece != std::nullopt
+                && opponentPiece->get()->color() == opponent(c)
+                && opponentPiece->get()->lastMoveIndex() == b.currentMoveIndex() - 1
+                )
+        {
+            Move enPassantMove = Move(c, PieceType::Pawn, pos, opponentPos);  // TODO: Other args
+            result.insert(result.end(), enPassantMove);
+        }
+
+    }
     return result;
 }
