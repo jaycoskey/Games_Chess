@@ -58,6 +58,7 @@ public:
     Col   col() const { return _pos.x; }
     Row   row() const { return _pos.y; }
     Short index() const { return _pos.x + _pos.y * BOARD_COLS; }
+    Short lastMoveIndex() const { return _lastMoveIndex; }
 
     void moveTo(const Pos& pos)
     {
@@ -80,9 +81,7 @@ private:
 };
 
 ostream& operator<<(ostream& os, const Piece& piece) {
-    os << "Piece{"
-       << showColor(piece._color) << showPieceType(piece._pieceType)
-       << '@' << piece._pos << "=#" << piece.index()
-       << "}\n";
+    os << showColor(piece._color) << showPieceType(piece._pieceType)
+       << "_@_" << piece._pos << "=index#" << piece.index();
     return os;
 }

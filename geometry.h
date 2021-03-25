@@ -113,7 +113,8 @@ struct Pos {
 
 ostream& operator<<(ostream& os, const Pos& pos)
 {
-    os << '(' << pos.x << ", " << pos.y << ')';
+    // os << '(' << pos.x << ", " << pos.y << ')';
+    os << pos.getAlgNotation();
     return os;
 }
 

@@ -12,6 +12,7 @@
 
 
 int main() {
+    logger.setLogLevel(LogDebug);
     Game game{};
     game.play();
 }

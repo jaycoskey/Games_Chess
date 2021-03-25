@@ -17,15 +17,15 @@ int main() {
 
     Dirs knightDirs = dirSignedPerms(Dir(1,2));
 
-    assert(orthoDirs.size()  == 4);
-    assert(diagDirs.size()   == 4);
-    assert(allDirs.size())   == 8);
+    assert(orthoDirs.size() == 4);
+    assert(diagDirs.size()  == 4);
+    assert(allDirs.size()   == 8);
 
-    assert(knightDirs.size() == 4);
+    assert(knightDirs.size() == 8);
 
     cout << "orthoDirs="  << showSet(orthoDirs) << "\n";
     cout << "diagDirs="   << showSet(diagDirs)  << "\n";
-    cout << "adjDirs="    << showSet(adjDirs)   << "\n";
+    cout << "allDirs="    << showSet(allDirs)   << "\n";
 
     cout << "knightDirs=" << showSet(knightDirs) << "\n";
 

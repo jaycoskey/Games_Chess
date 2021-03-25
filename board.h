@@ -7,10 +7,12 @@
 
 #include "util.h"
 #include "geometry.h"
+#include "player.h"
 #include "piece.h"
 
+#include "logger.h"
+
 class Move;
-class Game;
 
 using std::string;
 using std::cout, std::ostream, std::ostringstream;
@@ -23,6 +25,7 @@ using MoveRule = std::function<Moves(const Board&, Color, const Pos&)>;
 using OptPieceP = std::optional<std::shared_ptr<Piece>>;
 using PieceP   = std::shared_ptr<Piece>;
 
+using PieceData = std::tuple<Color, PieceType, Short>;
 using PiecePs = set<PieceP>;
 using Players = vector<Player>;
 
@@ -47,26 +50,35 @@ class Board {
 public:
     Board();
     Board(const Board& other);
+    Board(const vector<PieceData>& layout);  // For testing. Might later support loading saved game.
 
     bool containsPos(Pos pos) const;
 
     void addPiecePair(PieceType pieceType, Short index);
     void addPieceTo(Color color, PieceType pieceType, Short index);
     void addPiecePTo(PieceP pieceP, Pos to);
-    PieceP removePieceFrom(Pos pos);
+    PieceP removePieceFrom(const Pos& pos);
 
-    OptPieceP pieceAt(Pos pos) const;
+    OptPieceP pieceAt(const Pos& pos) const;
     OptPieceP pieceAt(Col col, Row row) const;
     OptPieceP pieceAt(Short index) const;
     const PiecePs& piecesWithColor(Color color) const;
+    const PieceP& getKingP(Color color) const { return _color2KingP.at(color); }
 
     void movePiece(const Pos& from, const Pos& to);
 
-    const PieceP& getKingP(Color color) const { return _color2KingP.at(color); }
+    Short currentMoveIndex() const { return _currentMoveIndex; }
+    void currentMoveIndex_decr() { _currentMoveIndex--; }
+    void currentMoveIndex_incr() { _currentMoveIndex++; }
+    Short movesSinceLastPawnMoveOrCapture() const;
 
     Hash zobristBitstring(int cInd, int ptInd) { return Board::_zobristTable[cInd][ptInd]; }
 
-    Color2PiecePs color2PiecePs;
+    Color2PiecePs color2PiecePs;  // TODO: Make private & add iterator to public API.
+
+    // For debugging only
+    void reportStatusAt(const Pos& pos) const;
+    void listPieces() const;
 
 private:
     static Short getZIndex(Color color) { return Board::_color2ZIndex.at(color); }
@@ -81,8 +93,10 @@ private:
     string _show() const;
     float  _valuation() const;
 
-    Pos2PieceP    _pos2PieceP;
-    Color2KingP   _color2KingP;
+    Short       _lastPawnMoveOrCaptureMoveIndex;
+    Short       _currentMoveIndex;
+    Pos2PieceP  _pos2PieceP;
+    Color2KingP _color2KingP;
 
     friend struct std::hash<Board>;
     friend ostream& operator<<(ostream& os, const Board& board);
@@ -125,14 +139,26 @@ ostream& operator<<(ostream& os, const Board& board)
 
 // ---------- public Board members
 
-Board::Board() {
+Board::Board()
+    :_currentMoveIndex{1}
+{
     _initPieces();
 }
 
 Board::Board(const Board& other)
     : color2PiecePs{other.color2PiecePs}
+    , _currentMoveIndex{1}
     , _pos2PieceP{other._pos2PieceP}
-    {}
+{}
+
+// For custom board layouts, including testing.
+Board::Board(const vector<PieceData>& layout)
+    : _currentMoveIndex{1}
+{
+    for (const PieceData& pd : layout) {
+        addPieceTo(std::get<0>(pd), std::get<1>(pd), std::get<2>(pd));
+    }
+}
 
 bool Board::containsPos(Pos pos) const
 {
@@ -157,9 +183,18 @@ void Board::addPieceTo(Color color, PieceType pieceType, Short index)
 
 void Board::movePiece(const Pos& from, const Pos& to)
 {
-    Piece& piece = *(pieceAt(from)->get());
-    _pos2PieceP[to] = _pos2PieceP[from];
+    // logger.info("            Board::movePiece: Moving "
+    //         , *(pieceAt(from)->get()), " from ", from, " to ", to
+    //         );
+    OptPieceP oPieceP = pieceAt(from);
+    assert(oPieceP != std::nullopt);
+    PieceP pieceP = *pieceAt(from);
+    _pos2PieceP[to] = pieceP;
     _pos2PieceP.erase(from);
+}
+
+Short Board::movesSinceLastPawnMoveOrCapture() const {
+    return _currentMoveIndex - _lastPawnMoveOrCaptureMoveIndex;
 }
 
 void Board::addPiecePTo(PieceP pieceP, Pos to)
@@ -169,7 +204,7 @@ void Board::addPiecePTo(PieceP pieceP, Pos to)
     _pos2PieceP[to] = pieceP;
 }
 
-PieceP Board::removePieceFrom(Pos pos)
+PieceP Board::removePieceFrom(const Pos& pos)
 {
     OptPieceP oPieceP = pieceAt(pos);
     assert(oPieceP != std::nullopt);
@@ -181,7 +216,7 @@ PieceP Board::removePieceFrom(Pos pos)
     return pieceP;
 }
 
-OptPieceP Board::pieceAt(Pos pos) const
+OptPieceP Board::pieceAt(const Pos& pos) const
 {
     if (_pos2PieceP.find(pos) == _pos2PieceP.end()) {
         return std::nullopt;
@@ -207,26 +242,41 @@ float Board::_valuation() const {
     return 0.0;
 }
 
+// For debugging only
+void Board::reportStatusAt(const Pos& pos) const {
+    OptPieceP oPieceP = pieceAt(pos);
+    if (oPieceP == std::nullopt) {
+        cout << "Position " << pos << " is empty.\n";
+    } else {
+        cout << "Position " << pos << " contains " << *oPieceP->get() << "\n";
+    }
+}
+
+void Board::listPieces() const {
+    for (const auto& [color, piecePs] : color2PiecePs) {
+        cout << "Piece with color " << showColor(color) << "\n";
+        for (const PieceP& pieceP : piecePs) {
+            cout << pieceP << "\n";
+        }
+    }
+}
+
 // ---------- private Board members
 
 void Board::_initPieces() {
-    for (Color color: {Color::Black, Color::White}) {
-
-        color2PiecePs[color] = PiecePs();
-        int king_indexes[]   = {4};
-        int queen_indexes[]  = {3};
-        int rook_indexes[]   = {0, 7};
-        int bishop_indexes[] = {2, 5};
-        int knight_indexes[] = {1, 6};
-        int pawn_indexes[]   = {8, 9, 10, 11, 12, 13, 14, 15};
-
-        for (Short index : king_indexes)   { addPiecePair(PieceType::King,   index); }
-        for (Short index : queen_indexes)  { addPiecePair(PieceType::Queen,  index); }
-        for (Short index : rook_indexes)   { addPiecePair(PieceType::Rook,   index); }
-        for (Short index : bishop_indexes) { addPiecePair(PieceType::Bishop, index); }
-        for (Short index : knight_indexes) { addPiecePair(PieceType::Knight, index); }
-        for (Short index : pawn_indexes)   { addPiecePair(PieceType::Pawn,   index); }
-    }
+    // color2PiecePs[color] = PiecePs();
+    int king_indexes[]   = {4};
+    int queen_indexes[]  = {3};
+    int rook_indexes[]   = {0, 7};
+    int bishop_indexes[] = {2, 5};
+    int knight_indexes[] = {1, 6};
+    int pawn_indexes[]   = {8, 9, 10, 11, 12, 13, 14, 15};
+    for (Short index : king_indexes)   { addPiecePair(PieceType::King,   index); }
+    for (Short index : queen_indexes)  { addPiecePair(PieceType::Queen,  index); }
+    for (Short index : rook_indexes)   { addPiecePair(PieceType::Rook,   index); }
+    for (Short index : bishop_indexes) { addPiecePair(PieceType::Bishop, index); }
+    for (Short index : knight_indexes) { addPiecePair(PieceType::Knight, index); }
+    for (Short index : pawn_indexes)   { addPiecePair(PieceType::Pawn,   index); }
 }
 
 string Board::_show() const
