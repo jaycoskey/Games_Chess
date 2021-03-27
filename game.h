@@ -16,6 +16,7 @@
 using std::cout;
 using std::map;
 
+
 // Note: The FIDE laws for the 50 Move Rule mention "50 moves by each player",
 //       by the law is interpreted as meaning 50 moves total.
 enum class GameState {
@@ -45,11 +46,11 @@ class Game {
 public:
     Game();
 
-    void        setPlayerName(Color color, const string& name) { _color2PlayerName[color] = name; }
-    CaptureRule getCaptureRule(PieceType pieceType);
-    MoveRule    getMoveRule(PieceType pieceType);
-    void        execMove(Board& board, const Move& move);
-    void        unexecMove(Board& board, const Move& move);
+    void     setPlayerName(Color color, const string& name) { _color2PlayerName[color] = name; }
+    IsAttackingRule getIsAttackingRule(PieceType pieceType);
+    MoveRule getMoveRule(PieceType pieceType);
+    void     execMove(Board& b, const Move& move);
+    void     unexecMove(Board& b, const Move& move);
 
     void     play();
 
@@ -62,7 +63,6 @@ private:
 
     map<Hash, int> _boardLayoutRepetitionCount;
     int _movesSinceCapture = 0;
-    Moves _moveHistory;
 
     const map<Color, Dir> color2Forward
         { {Color::Black, Dir{0, -1}}
@@ -92,7 +92,7 @@ void Game::play()
             cout << _board;
 
             const Pos2Moves& validPlayerMoves = getValidPlayerMoves(_board, color);
-            Move move = getPlayerMove(_board, color, validPlayerMoves);
+            Move move = queryPlayerMove(_board, color, validPlayerMoves);
             move.apply(_board);
             GameState gameState = getGameState(color);
             if (gameState == GameState::InPlay) {
@@ -117,16 +117,16 @@ GameState Game::getGameState(Color colorPlayed) const
 
     // Test for checkmate
     Color opponentColor = opponent(colorPlayed);
-    const Piece& king = *(_board.getKingP(opponentColor));
-    if (!canBeCaptured(_board, king)) {
+    const Piece& king = _board.king(opponentColor);
+    if (!isAttacked(_board, king.pos(), king.color())) {
         return GameState::InPlay;
-    } 
-    const Pos2Moves& validPlayerMoves = getValidPlayerMoves(_board, colorPlayed);
-    for (const auto& [from, moves] : validPlayerMoves) {
-        for (const Move& move : moves) {
-            move.apply(const_cast<Board&>(_board));  // Temp board alteration
+    }
+    Pos2Moves validPlayerMoves = getValidPlayerMoves(_board, colorPlayed);
+    for (auto& [from, moves] : validPlayerMoves) {
+        for (Move& move : moves) {
+            move.apply(const_cast<Board&>(_board));  // Temp board change
             bool canEscape = !isInCheck(_board, colorPlayed);
-            move.applyUndo(const_cast<Board&>(_board));  // Undo temp board alteration
+            move.applyUndo(const_cast<Board&>(_board));  // Undo temp board change
             if (canEscape) {
                 return GameState::InPlay;
             }
@@ -148,22 +148,22 @@ void announceGameEnd(const GameState gameState)
         switch (gameState)
         {
             case GameState::Draw_Move50Rule:
-                cout << "Draw!";
+                cout << "Draw! (50 Move Rule)\n";
                 break;
             case GameState::Draw_Move75Rule:
-                cout << "Draw!";
+                cout << "Draw! (75 Move Rule)\n";
                 break;
             case GameState::Draw_Stalemate:
-                cout << "Draw!";
+                cout << "Draw! (Stalemate)\n";
                 break;
             case GameState::Draw_ThreefoldRepetition:
-                cout << "Draw!";
+                cout << "Draw! (3-fold repetition)\n";
                 break;
             case GameState::WinBlack_Checkmate:
-                cout << "Black Wins!";
+                cout << "Black Wins! (Checkmate)";
                 break;
             case GameState::WinWhite_Checkmate:
-                cout << "White Wins!";
+                cout << "White Wins! (Checkmate)";
                 break;
             default:
                 throw new std::invalid_argument("Unrecognized GameState");

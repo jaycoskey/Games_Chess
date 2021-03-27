@@ -12,8 +12,8 @@ using std::cout;
 void test_board_pieceCounts() {
     Board board;
 
-    for (const auto& [color, piecePs] : board.color2PiecePs) {
-        cout << "Color = " << showColor(color) << "\n";
+    for (const auto& [c, piecePs] : board.color2PiecePs) {
+        cout << "Color = " << c << "\n";
 
         Short kingCount   = 0;
         Short queenCount  = 0;
@@ -23,7 +23,6 @@ void test_board_pieceCounts() {
         Short pawnCount   = 0;
 
         for (const PieceP& pieceP : piecePs) {
-            // cout << "Piece = " << *pieceP << "\n";
 
             switch(pieceP->pieceType()) {
               case PieceType::King:

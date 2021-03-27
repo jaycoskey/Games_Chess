@@ -12,7 +12,8 @@
 
 
 int main() {
-    logger.setLogLevel(LogDebug);
+    logger.setReportLevel(LogError);
+    // logger.logToFile("jmc.txt");
     Game game{};
     game.play();
 }

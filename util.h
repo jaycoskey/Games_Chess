@@ -13,7 +13,7 @@
 #include <vector>
 
 using std::string;
-using std::ostringstream;
+using std::ostream, std::ostringstream;
 using std::map, std::set, std::vector;
 
 using Short = int16_t;
@@ -27,19 +27,17 @@ enum class Color {
     Black,
     White
 };
-const vector<Color> colors{Color::White, Color::Black};
+ostream& operator<<(ostream& os, Color c) {
+    if (c == Color::Black) { os << 'B'; }
+    else { os << 'W'; }
+    return os;
+}
 
 Color opponent(Color color) {
     return color == Color::Black ? Color::White : Color::Black;
 }
 
-const string& showColor(Color color) {
-    const map<Color, string> color2cstr {
-        { Color::Black, string{"B"} },
-        { Color::White, string{"W"} }
-    };
-    return color2cstr.find(color)->second;
-}
+const vector<Color> colors{Color::White, Color::Black};
 
 // ---------- Hash-related functions
 string showHash(Hash h) {
@@ -62,9 +60,28 @@ Hash random_bitstring() {
     return prng();
 }
 
-// ---------- Set operations
+// ---------- Collection functions
+template <typename K, typename V>
+vector<std::pair<K, V>> mapToVector(const map<K, V>& src)
+{
+    return vector<std::pair<K, V>>(src.begin(), src.end());
+}
+
 template <typename T>
 std::string showSet(const set<T>& items) {
+    ostringstream oss;
+    oss << '{';
+    int i = 0;
+    for (auto& item : items) {
+        if (i++ > 0) { oss << ", "; }
+        oss << item;
+    }
+    oss << '}';
+    return oss.str();
+}
+
+template <typename T>
+std::string showVector(const vector<T>& items) {
     ostringstream oss;
     oss << '[';
     int i = 0;
@@ -78,7 +95,7 @@ std::string showSet(const set<T>& items) {
 
 template <typename T>
 set<T> getUnion(const set<T>& a, const set<T>& b) {
-    set<T> result = a;
+    set<T> result{a};
     result.insert(b.begin(), b.end());
     return result;
 }

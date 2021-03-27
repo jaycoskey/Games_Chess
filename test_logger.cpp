@@ -4,7 +4,6 @@
 
 #include "logger.h"
 
-
 using std::cout;
 
 

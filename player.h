@@ -14,7 +14,7 @@ class Board;
 // TODO: Add user interactivity, including asking Players for their names
 class Player {
 public:
-    static const string& getPlayerName(Color color) { return _color2PlayerName.at(color); }
+    static const string& playerName(Color color) { return _color2PlayerName.at(color); }
     static void setPlayerName(Color color, const string& name) { _color2PlayerName[color] = name; }
 
     static const Dir& getForward(Color color) { return _color2Forward.at(color); }
