@@ -5,6 +5,7 @@ This is an incomplete personal project toaward a single-threaded, text-based hum
 Focus (but no promises):
   * Implementation of rules, such as Pawn promotion, Castling, the different types of Draw, etc.
   * Flexibility of board/piece/rules, to enable support of chess variants.
+  * Prioritizing (enjoyably) refreshing C++ familiarity over following a particular methodology.
  
 Some design choices:
   * Concise move rules via flexible move function(s): slide, leap, etc.
@@ -51,7 +52,7 @@ Implementation outline:
 Out of scope (incomplete):
   * Computer strategy (C vs H, or C vs C)
   * GUI
-  * High performance (e.g., bitboards, use of GPUs)
+  * High performance (e.g., bitboards, parallelism, use of GPUs)
 
 History:
   * This started as a one-day exercise to see how far I can get toward an implementation of a chess game. I decided to continue.
