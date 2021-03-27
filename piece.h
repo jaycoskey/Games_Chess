@@ -9,8 +9,10 @@
 // #include "player.h"
 
 using std::string;
+using std::ostream;
 using std::map, std::vector;
 
+using PieceValue = float;
 
 enum class PieceType {
     None,
@@ -21,30 +23,30 @@ enum class PieceType {
     Knight,
     Pawn
 };
+ostream& operator<<(ostream& os, PieceType pt)
+{
+    if (pt == PieceType::King)        { os << 'K'; }
+    else if (pt == PieceType::Queen)  { os << 'Q'; }
+    else if (pt == PieceType::Rook)   { os << 'R'; }
+    else if (pt == PieceType::Bishop) { os << 'B'; }
+    else if (pt == PieceType::Knight) { os << 'N'; }
+    else if (pt == PieceType::Pawn)   { os << 'P'; }
+    return os;
+}
+
 const vector<PieceType> pieceTypes{
     PieceType::King, PieceType::Queen, PieceType::Rook
     , PieceType::Bishop, PieceType::Knight, PieceType::Pawn
     };
 
-const string& showPieceType(PieceType pieceType) {
-    static const map<PieceType, string> pieceType2cstr {
-        { PieceType::King,   string{"K"} },
-        { PieceType::Queen,  string{"Q"} },
-        { PieceType::Rook,   string{"R"} },
-        { PieceType::Bishop, string{"B"} },
-        { PieceType::Knight, string{"N"} },
-        { PieceType::Pawn,   string{"P"} },
-        { PieceType::None,   string{" "} }
-    };
-    return pieceType2cstr.find(pieceType)->second;
-}
-
 class Board;
 
 class Piece {
 public:
-    Piece(Color color, PieceType pieceType, Short index)
-        : _color{color}, _pieceType{pieceType}, _pos{index},
+    static PieceValue pieceValue(PieceType pt) { return _pieceType2PieceValue.at(pt); }
+
+    Piece(Color color, PieceType pt, Short index)
+        : _color{color}, _pieceType{pt}, _pos{index},
           _lastMoveIndex{0}
         {}
 
@@ -60,20 +62,20 @@ public:
     Short index() const { return _pos.x + _pos.y * BOARD_COLS; }
     Short lastMoveIndex() const { return _lastMoveIndex; }
 
-    void moveTo(const Pos& pos)
-    {
-        _pos.setPos(pos);
+    void moveTo(const Pos& pos) {
+        _pos.moveTo(pos);
     }
-    void setPieceType(PieceType pieceType) { _pieceType = pieceType; }
+    void setPieceType(PieceType pt) { _pieceType = pt; }
 
     bool operator<(const Piece& other) { return _pos < other.pos(); }
 
     friend ostream& operator<<(ostream& os, const Piece& piece);
 
 private:
+    static map<PieceType, PieceValue> _pieceType2PieceValue;
+
     Color     _color;
     PieceType _pieceType;
-
     Pos       _pos;
     Short     _lastMoveIndex;  // Convention: Zero before first move
 
@@ -81,7 +83,16 @@ private:
 };
 
 ostream& operator<<(ostream& os, const Piece& piece) {
-    os << showColor(piece._color) << showPieceType(piece._pieceType)
+    os << piece._color << piece._pieceType
        << "_@_" << piece._pos << "=index#" << piece.index();
     return os;
 }
+
+map<PieceType, PieceValue> Piece::_pieceType2PieceValue{
+    {PieceType::King, 1'000'000.0}
+    , {PieceType::Queen,  9.0}
+    , {PieceType::Rook,   5.0}
+    , {PieceType::Bishop, 3.5}
+    , {PieceType::Knight, 3.0}
+    , {PieceType::Pawn,   1.0}
+    };
