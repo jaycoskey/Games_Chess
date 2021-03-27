@@ -30,10 +30,10 @@ class Logger
 {
 public:
     Logger(LogLevel reportLevel)
-        : _reportLevel{reportLevel}
-    {
-        _outP = &std::cerr;
-    }
+        : _foutP{nullptr}
+        , _outP{&std::cerr}
+        , _reportLevel{reportLevel}
+    { }
 
     Logger(LogLevel reportLevel, const string& base_filename)
         : _reportLevel{reportLevel}
@@ -42,16 +42,33 @@ public:
         time(&now);
         char suffix[sizeof "20201231_125959 "];
         strftime(suffix, sizeof suffix, "_%Y%m%d_%H%M%S\0", localtime(&now));
-        ofstream* foutP = new ofstream{};
-        foutP->open(base_filename + suffix, std::ios_base::out);
-        _outP = foutP;
+        _filename = base_filename + suffix + ".log";
+        _setOfstream();
+    }
+
+    void logToCerr() {
+        _outP = &std::cerr;
+    }
+
+    void logToFile(const string& filename) {
+        _closeFile();
+        _filename = filename;
+        _setOfstream();
+    }
+
+    template <typename Arg, typename... Args>
+    void log(LogLevel eventLevel, Arg&& arg, Args&&... args)
+    {
+        if (eventLevel <= _reportLevel) {
+            _write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
+        }
     }
 
     template <typename Arg, typename... Args>
     void error(Arg&& arg, Args&&... args)
     {
         if (LogError <= _reportLevel) {
-            write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...); 
+            _write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -59,7 +76,7 @@ public:
     void warn(Arg&& arg, Args&&... args)
     {
         if (LogWarn <= _reportLevel) {
-            write("WARN: ", forward<Arg>(arg), forward<Args>(args)...); 
+            _write("WARN : ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -67,7 +84,7 @@ public:
     void info(Arg&& arg, Args&&... args)
     {
         if (LogInfo <= _reportLevel) {
-            write("INFO: ", forward<Arg>(arg), forward<Args>(args)...); 
+            _write("INFO : ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -75,7 +92,7 @@ public:
     void debug(Arg&& arg, Args&&... args)
     {
         if (LogDebug <= _reportLevel) {
-            write("DEBUG: ", forward<Arg>(arg), forward<Args>(args)...); 
+            _write("DEBUG: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -83,7 +100,7 @@ public:
     void trace(Arg&& arg, Args&&... args)
     {
         if (LogTrace <= _reportLevel) {
-            write("TRACE: ", forward<Arg>(arg), forward<Args>(args)...); 
+            _write("TRACE: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -97,7 +114,7 @@ public:
         return _reportLevel;
     }
 
-    void setLogLevel(LogLevel newLogLevel)
+    void setReportLevel(LogLevel newLogLevel)
     {
         _reportLevel = newLogLevel;
     }
@@ -105,19 +122,35 @@ public:
     ~Logger()
     {
         *(_outP) << std::flush;;
+        _closeFile();
     }
 
 private:
+    void _setOfstream() {
+        _foutP = new ofstream{};
+        _foutP->open(_filename, std::ios_base::out);
+        _outP = _foutP;
+    }
+
+    void _closeFile() {
+        if (_foutP) {
+            try { _foutP->close(); }
+            catch (...) { }
+        }
+    }
+
     template <typename Arg, typename... Args>
-    void write(Arg&& arg, Args&&... args)
+    void _write(Arg&& arg, Args&&... args)
     {
         *_outP << forward<Arg>(arg);
         ((*_outP << forward<Args>(args)), ...);
         *_outP << "\n";
     }
 
-    ostream* _outP;
-    LogLevel _reportLevel;
+    string    _filename;
+    ofstream* _foutP;
+    ostream*  _outP;
+    LogLevel  _reportLevel;
 };
 
 Logger logger{LogLevel::LogError};
