@@ -25,6 +25,10 @@ const Row BOARD_ROWS = 8;
 // ---------- Board index inversion
 
 Short invertIndex(Short index) { return BOARD_ROWS * BOARD_COLS - 1 - index; }
+Short invertRow(Short index) {
+    return BOARD_ROWS * BOARD_COLS - 1 - index
+        + 2 * (index % BOARD_COLS) - (BOARD_COLS - 1);
+}
 
 // ---------- Direction
 
@@ -99,29 +103,41 @@ struct Pos {
     bool operator<(const Pos& other) const;
     bool operator==(const Pos& other) const;
 
-    Pos fromRelPos(Color c) const { return Pos(toRelCol(c), toRelRow(c)); }
+    Pos fromRel(Color c) const { return Pos(toRelCol(c), toRelRow(c)); }
 
     Col   toRelCol(Color c) const { return c == Color::White ? x : BOARD_COLS - 1 - x; }
     Row   toRelRow(Color c) const { return c == Color::White ? y : BOARD_ROWS - 1 - y; }
-    void  setPos(const Pos& other);
     Short index() const { return x + BOARD_COLS * y; }
+    const string algNotation() const;
 
-    const string getAlgNotation() const;
+    Short xdiff(const Pos& other) const { return other.x - x; }
+
+    Pos posLeft(Color c, Short n)  const { return Pos(x + (c == Color::White ? -n :  n), y); }
+    Pos posRight(Color c, Short n) const { return Pos(x + (c == Color::White ?  n : -n), y); }
+
+    void moveTo(const Pos& other);
 
     friend ostream& operator<<(ostream& os, const Pos& pos);
 };
 
 ostream& operator<<(ostream& os, const Pos& pos)
 {
-    // os << '(' << pos.x << ", " << pos.y << ')';
-    os << pos.getAlgNotation();
+    os << pos.algNotation();
     return os;
 }
 
-const string Pos::getAlgNotation() const
+const string Pos::algNotation() const
 {
     ostringstream oss;
-    oss << char((unsigned char)('a') + x) << y + 1;
+
+    if (x < 0)  { oss << 'L'; }
+    else if (x > BOARD_COLS - 1) { oss << 'R'; }
+    else { oss << char((unsigned char)('a') + x); }
+
+    if (y < 0) { oss << 'B'; }
+    else if (y > BOARD_ROWS - 1) { oss << 'T'; }
+    else { oss << y + 1; }
+
     return oss.str();
 }
 
@@ -138,7 +154,7 @@ bool Pos::operator==(const Pos& other) const
     return x == other.x && y == other.y;
 }
 
-void Pos::setPos(const Pos& other)
+void Pos::moveTo(const Pos& other)
 {
     x = other.x;
     y = other.y;
