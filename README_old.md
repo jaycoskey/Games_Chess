@@ -4,27 +4,40 @@ This is an incomplete personal project toaward a single-threaded, text-based hum
 
 Focus (but no promises):
   * Implementation of rules, such as Pawn promotion, Castling, the different types of Draw, etc.
-  * Flexibility of board/piece/rules, to enable support of chess variants.
+  * Flexibility of board/piece/rules, to enable future support of chess variants.
   * Prioritizing (enjoyably) refreshing C++ familiarity over following a particular methodology.
  
 Some design choices:
   * Concise move rules via flexible move function(s): slide, leap, etc.
+  * Use of C++ template parameter packs in class Logger, to support flexible logging.
   * Presence of some testing is high priority, but exhaustive testing is low priority.
-    * Computer vs. computer play would be a great test driver, if this project ever gets that far.
   * Use scoped enums, except where values are used as superimposable flags.
   * Note: Having all code in header files is a temporary convenience. Source files to be added later.
 
+Computer players:
+  * There are current two computer players: Random and RandomCapture.
+  * Neither of these computer players currently claim Draw conditions.
+  * The computer players cannot current be given Draw offers, or accept proposals to concede.
+ 
 Implementation outline:
   * Board
-    * class Board      // Will use Zobrist hashing to track repeated board positions
+    * class Board      // Uses Zobrist hashing.
     * Contains Pieces  // Sparse storage. Pieces located at x/y or at index? Decide later.
     * Game state enums // Check/Mate; WinBlack/WinWhite/Draw; Type of Draw, etc.
   * Game
-    * GameState        // Checkmate/Draw (auto: Stalemate/5x Board Rep/75 Move Rule; claimable: 3x Board Rep/50 Move Rule)
     * class Game
     * enum CheckType   // Check / Checkmate
     * Contains Board
     * Contains Players
+  * GameState
+    * GameEnd          // InPlay, Draw, WinBlack, WinWhite
+    * WinType          // Agreement, Checkmate, Conceding
+    * DrawFlag (auto)  // Stalemate, 5x Rep, 75 Move Rule, Insufficient Resources
+    * DrawFlag (others)// Agreement, 3x Rep (claimed), 50 Move Rule (claimed)
+    * Note:            Draw can be claimed as part of a move, or in place of a move
+    * Insufficient Resources: K vs. K (or K+B or K+N or K+N+N)
+    * Insufficient Resources: K+R vs. K+B (or K+N or K+R+B or K+R+N)
+    * Insufficient Resources: K+B vs. K+B, where both Bishops are on the same color square
   * Geometry: Pos, Dir
     * struct Pos       // x/y vs indexes? Prob x/y short-term; indexes long-term (performance).
     * struct Dir       // Dir != Pos. Pos+Dir and Dir+Dir are defined; Pos+Pos is not.
@@ -49,9 +62,11 @@ Implementation outline:
     * enum Color
     * PRNG             // For computer players
 
-Out of scope (incomplete):
-  * Computer strategy (C vs H, or C vs C)
-  * GUI
+Out of scope (partial list):
+  * Sophisticated computer play.
+  * GUI.
+  * Board, piece, or rule variations (though these should be feasible to add)
+  * Use of a chess clock
   * High performance (e.g., bitboards, parallelism, use of GPUs)
 
 History:
