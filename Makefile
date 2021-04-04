@@ -1,38 +1,68 @@
-CC=g++
 
+.PHONY: all build clean objs run test
+all: build run
+
+# ---------------------------------------- 
+CPP=g++
+# ---------------------------------------- 
 CPPFLAGS = -std=c++17
 CPPFLAGS += -Wall -Wextra -Wunused
 CPPFLAGS += -g
-# CPPFLAGS += -w
+# CPPFLAGS += -v
 
 LDFLAGS = -lgtest
 
-PROG = chess
+SRC_DIR := .
+SRCS := chess.cpp
+HDRS := board.h game.h game_state.h geometry.h logger.h move.h piece.h player.h util.h
 
-.PHONY: all
-all: build run
+OBJ_DIR := .
+OBJS := chess.o
 
-TEST_PROGS = test_util
-OBJECTS=chess.o
+PROG := chess
+$(PROG): $(OBJS)
+	$(CPP) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
 
-build: $(OBJECTS)
-	$(CC) $(CPPFLAGS) $(OBJECTS) -o $(PROG) $(LDFLAGS)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HDRS)
+	$(CPP) $(CPPFLAGS) -c -o $@ $<
 
-E:
-	$(CC) $(CPPFLAGS) -E chess.cpp
+# ---------------------------------------- 
+TEST_CPP := $(CPP)
+TEST_CPPFLAGS := $(CPPFLAGS)
+TEST_LDFLAGS := $(LDFLAGS)
+
+TEST_SRC_DIR := .
+TEST_SRCS := test_chess.cpp
+
+# TODO: Add tests for Game, GameState, Dir, Pos, Piece, Player
+TEST_HDRS := test_board.h test_logger.h test_move.h test_util.h
+
+TEST_OBJ_DIR := .
+
+TEST_OBJS := test_chess.o
+
+TEST_PROG := test_chess
+
+$(TEST_PROG): $(TEST_OBJS)
+	$(TEST_CPP) $(TEST_LDFLAGS) -o $@ $^
+ 
+$(TEST_OBJ_DIR)/%.o: $(TEST_SRC_DIR)/%.cpp $(HDRS)
+	$(TEST_CPP) $(TEST_CPPFLAGS) -c -o $@ $<
+
+# ---------------------------------------- 
+objs: $(OBJS)
+
+build: $(PROG)
 
 run:
-	./$(PROG)
+	$(OBJ_DIR)/$(PROG)
 
-test:
-	g++ $(CPPFLAGS) -o test_board  test_board.cpp
-	g++ $(CPPFLAGS) -o test_logger test_logger.cpp
-	g++ $(CPPFLAGS) -o test_util   test_util.cpp
-	./test_board
-	./test_logger
-	./test_util
+test: $(TEST_PROG)
+	$(TEST_OBJ_DIR)/$(TEST_PROG)
 
 clean:
-	rm -rf $(PROG) *.o *.dSYM
-	rm -rf test_board test_logger test_util
+	rm -rf $(PROG) $(OBJS)
+	rm -rf $(TEST_PROG) $(TEST_OBJS)
+	rm -f *.dSYM *.E
+	rm -rf test_board test_board_state test_logger test_move test_util
 	rm -rf test_logger_*
