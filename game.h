@@ -13,160 +13,213 @@
 #include "board.h"
 #include "move.h"
 
-using std::cout;
-using std::map;
+using std::cout, std::ostringstream;
 
 
-// Note: The FIDE laws for the 50 Move Rule mention "50 moves by each player",
-//       by the law is interpreted as meaning 50 moves total.
-enum class GameState {
-    InPlay,
-    // Draw_Agreement,
-    // Draw_Clock,             // Both players exceed their time allotment.
-    // Draw_DeadPosition,      // Insufficient material to lead to checkmate (e.g., two Kings).
-    Draw_Move50Rule,           // 50 moves w/ no captures or Pawn moves. Must be claimed by player on turn.
-    Draw_Move75Rule,           // 75 moves w/ no captures or Pawn moves. Automatic.
-    Draw_Stalemate,            // No legal moves available.
-    Draw_ThreefoldRepetition,  // 3x repetition of Board w/ same Player to move.
-
-    // WinBlack_Agreement,
-    WinBlack_Checkmate,
-    // WinBlack_Clock,
-
-    // WinWhite_Agreement,
-    WinWhite_Checkmate
-    // WinWhite_Clock,
-};
-
-// TODO: Get Player names at startup.
-// TODO: Implement check, checkmate, and draw detection.
-// TODO: Announce winner at end of Game.
-// TODO: Any user-selectable rule variations (e.g., Checker-Pawn Chess)?
 class Game {
 public:
+    static void printConciseMatchSummary(vector<GameState>& gss);
+    static void printVerboseMatchSummary(const vector<GameState>& gss);
+
     Game();
 
-    void     setPlayerName(Color color, const string& name) { _color2PlayerName[color] = name; }
-    IsAttackingRule getIsAttackingRule(PieceType pieceType);
-    MoveRule getMoveRule(PieceType pieceType);
-    void     execMove(Board& b, const Move& move);
-    void     unexecMove(Board& b, const Move& move);
-
-    void     play();
+    const GameState gameLoop();
+    void play( Short autoReplayCount=0
+             , PlayerType wPlayer=PlayerType::Computer_Random
+             , PlayerType bPlayer=PlayerType::Computer_Random
+             );
 
 private:
-    GameState getGameState(Color colorCompletingMove) const;
-    void initPlayers();
+    // ---------- Private read methods
+    void _announceGameEnd(const GameState& gs) const;
+    void _printGameStats() const;
+
+    // ---------- Private write methods
+    void _initPlayers();
+    void _reset();
 
     Board _board;
-    Players _players;
-
-    map<Hash, int> _boardLayoutRepetitionCount;
-    int _movesSinceCapture = 0;
-
-    const map<Color, Dir> color2Forward
-        { {Color::Black, Dir{0, -1}}
-        , {Color::White, Dir{0,  1}}
-        };
-    map<Color, string> _color2PlayerName;
+    Pos2Moves _validPlayerMovesCache{};
 };
 
-// ---------- Public members
+void Game::printConciseMatchSummary(vector<GameState>& gss)
+{
+    map<GameState, Short> gsHistogram{};
+    for (GameState& gs : gss) {
+        if (gsHistogram.find(gs) == gsHistogram.end()) {
+            gsHistogram[gs] = 1;
+        } else {
+            gsHistogram[gs] += 1;
+        }
+    }
+    for (auto [gs, count] : gsHistogram) {
+        cout << "\t"
+             << std::setw(5) << std::left << std::setfill(' ')
+             << count << "instances: " << gs;
+    }
+}
 
+void Game::printVerboseMatchSummary(const vector<GameState>& gss)
+{
+    for (Short k = 0; (unsigned long) k < gss.size(); ++k) {
+        cout << "\tGame #" << k + 1 << ". " << gss[k];
+    }
+}
+
+// ---------- Constructor
 Game::Game()
 {
     // Init board not needed---use default layout
-    initPlayers();
+    _initPlayers();
 }
 
-void announceGameEnd(const GameState gameState);
-
-void Game::play()
+// ---------- Public write methods
+const GameState Game::gameLoop()
 {
-    bool isGameInPlay = true;
+    _reset();
     int  move_num = 0;
+    Color c = Color::Black;
+    GameState result;
 
-    while (isGameInPlay) {
+    while (true) {
         move_num++;
-        for (auto& color : colors) {
-            cout << _board;
+        c = opponent(c);
 
-            const Pos2Moves& validPlayerMoves = getValidPlayerMoves(_board, color);
-            Move move = queryPlayerMove(_board, color, validPlayerMoves);
+        cout << "Turn #" << _board.currentMoveIndex() << " (" << to_string(c) << "):\n";
+        cout << _board;
+
+        _board.updateBoardHashHistory(c);
+        const Pos2Moves& validPlayerMoves
+            = _validPlayerMovesCache.size() > 0
+                  ? _validPlayerMovesCache  // Cached from end of prev turn
+                  : Move::getValidPlayerMoves(_board, c)
+                  ;
+
+        ExtMove extMove
+            = Move::getPlayerMove(Player::playerType(c), _board, c, validPlayerMoves);
+
+        if (extMove.optMove == std::nullopt) {
+            if (extMove.isDrawClaim) {
+                // Pre-verified Draw condition is claimed
+                DrawFlags drawFlags = Draw_None;
+
+                if (_board.maxBoardRepetitionCount(c) >= 3) {
+                    drawFlags |= Draw_Claimed_3xRepetition;
+                } else if (_board.movesSinceLastPmoc() >= 50) {
+                    drawFlags |= Draw_Claimed_50MoveRule;
+                }
+                result = GameState{ GameEnd::Draw
+                                  , WinType::None
+                                  , drawFlags
+                                  };
+                break;
+            } else {
+                // Game ended by agreement
+                GameEnd agreedGameEnd = extMove.agreedGameEnd;
+                WinType winType = WinType::None;
+                if (  (agreedGameEnd == GameEnd::WinBlack && c == Color::White)
+                   || (agreedGameEnd == GameEnd::WinWhite && c == Color::Black)
+                   )
+                {
+                    winType = WinType::Conceding;
+                } else {
+                    assert(  (agreedGameEnd == GameEnd::WinBlack && c == Color::Black)
+                          || (agreedGameEnd == GameEnd::WinWhite && c == Color::White)
+                          );
+                    winType = WinType::Agreement;
+                }
+                result = GameState{ agreedGameEnd
+                                  , winType
+                                  , agreedGameEnd == GameEnd::Draw
+                                      ? Draw_Agreement : Draw_None
+                                  };
+                break;
+            }
+        } else {
+            // A Piece was moved
+            const Move& move = *extMove.optMove;
+            ostringstream oss;
+            oss << _board.currentMoveIndex() << '.';
+            cout << std::setw(4) << std::left << std::setfill(' ')
+                 << oss.str() << " Moved: " << move << "\n";
+            cout << "-------------------------\n";
             move.apply(_board);
-            GameState gameState = getGameState(color);
-            if (gameState == GameState::InPlay) {
+
+            // Determine GameState from board
+            _validPlayerMovesCache  // Cached for beginning of next turn
+                = Move::getValidPlayerMoves(_board, opponent(c));
+            result = GameState{_board, c, extMove.isDrawClaim, _validPlayerMovesCache};
+
+            Move::prevMove().setCheck(result.isCheck());
+            Move::prevMove().setCheckmate(result.isCheckmate());
+            if (result.gameEnd() == GameEnd::InPlay) {
                 continue;
             }
-            announceGameEnd(gameState);
-            isGameInPlay = false;
             break;
         }
     }
+    _announceGameEnd(result);
+    return result;
 }
 
-// ---------- private Game members
-
-// TODO: Test for Draw.
-GameState Game::getGameState(Color colorPlayed) const
+void Game::play(Short autoReplayCount, PlayerType wPlayer, PlayerType bPlayer)
 {
+    vector<GameState> gss;
+    Player::setPlayerType(Color::White, wPlayer);
+    Player::setPlayerType(Color::Black, bPlayer);
 
-    if (_board.movesSinceLastPawnMoveOrCapture() >= 50) {
-        return GameState::Draw_Move50Rule;
-    }
-
-    // Test for checkmate
-    Color opponentColor = opponent(colorPlayed);
-    const Piece& king = _board.king(opponentColor);
-    if (!isAttacked(_board, king.pos(), king.color())) {
-        return GameState::InPlay;
-    }
-    Pos2Moves validPlayerMoves = getValidPlayerMoves(_board, colorPlayed);
-    for (auto& [from, moves] : validPlayerMoves) {
-        for (Move& move : moves) {
-            move.apply(const_cast<Board&>(_board));  // Temp board change
-            bool canEscape = !isInCheck(_board, colorPlayed);
-            move.applyUndo(const_cast<Board&>(_board));  // Undo temp board change
-            if (canEscape) {
-                return GameState::InPlay;
+    for ( Short gameNum = 1
+        ; autoReplayCount == 0 || gameNum <= autoReplayCount
+        ; ++gameNum
+        )
+    {
+        cout << "=========================\n";
+        ostringstream oss;
+        oss << gameNum << '.';
+        cout << "Game #" << std::setw(5) << std::left << std::setfill(' ')
+             << oss.str() << "\n";
+        gss.push_back(gameLoop());
+        _printGameStats();
+        if (autoReplayCount == 0) {
+            if (!Player::offerBool(std::nullopt, "Play again (y/n)? ")) {
+                cout << "Thanks for playing. Bye!\n";
+                break;
             }
         }
     }
-    return colorPlayed == Color::Black
-                              ? GameState::WinBlack_Checkmate
-                              : GameState::WinWhite_Checkmate;
+
+    cout << "Match records (" << gss.size() << " games):\n";
+    // Game::printVerboseMatchSummary(gss);
+    Game::printConciseMatchSummary(gss);
 }
 
-void Game::initPlayers()
+// ---------- Private read members
+void Game::_announceGameEnd(const GameState& gs) const
+{
+    assert(gs.gameEnd() != GameEnd::InPlay);
+    cout << "Final board layout:\n";
+    cout << _board;  // Board inserts final newline.
+    cout << "Game over: " << gs << "\n";
+}
+
+void Game::_printGameStats() const
+{
+    // Print game stats after game end
+    cout << "Move history (custom):\n\t" << Move::getMoveHistory() << "\n";
+    cout << "Move history (verbose input PGN):\n\t" << Move::history_to_pgn() << "\n";
+    _board.printBoardHashRepetitions();
+    cout << "Moves since last Pawn move or capture:\n\t"
+         << _board.movesSinceLastPmoc() << "\n";
+}
+
+// ---------- Private write members
+void Game::_initPlayers()
 {
 }
 
-void announceGameEnd(const GameState gameState)
+void Game::_reset()
 {
-    if (gameState != GameState::InPlay) {
-        cout << "Game is over: ";
-        switch (gameState)
-        {
-            case GameState::Draw_Move50Rule:
-                cout << "Draw! (50 Move Rule)\n";
-                break;
-            case GameState::Draw_Move75Rule:
-                cout << "Draw! (75 Move Rule)\n";
-                break;
-            case GameState::Draw_Stalemate:
-                cout << "Draw! (Stalemate)\n";
-                break;
-            case GameState::Draw_ThreefoldRepetition:
-                cout << "Draw! (3-fold repetition)\n";
-                break;
-            case GameState::WinBlack_Checkmate:
-                cout << "Black Wins! (Checkmate)";
-                break;
-            case GameState::WinWhite_Checkmate:
-                cout << "White Wins! (Checkmate)";
-                break;
-            default:
-                throw new std::invalid_argument("Unrecognized GameState");
-        }
-    }
+    _board = Board{true};
+    _validPlayerMovesCache.clear();
+    Move::reset();
 }
