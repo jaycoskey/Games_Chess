@@ -10,8 +10,7 @@
 #include <sstream>
 
 using std::string;
-using std::cout;
-using std::ofstream, std::ostream;
+using std::cout, std::ofstream, std::ostream;
 using std::forward;
 
 
@@ -50,6 +49,10 @@ public:
         _outP = &std::cerr;
     }
 
+    void logToCout() {
+        _outP = &std::cout;
+    }
+
     void logToFile(const string& filename) {
         _closeFile();
         _filename = filename;
@@ -60,7 +63,7 @@ public:
     void log(LogLevel eventLevel, Arg&& arg, Args&&... args)
     {
         if (eventLevel <= _reportLevel) {
-            _write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -68,7 +71,7 @@ public:
     void error(Arg&& arg, Args&&... args)
     {
         if (LogError <= _reportLevel) {
-            _write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -76,7 +79,7 @@ public:
     void warn(Arg&& arg, Args&&... args)
     {
         if (LogWarn <= _reportLevel) {
-            _write("WARN : ", forward<Arg>(arg), forward<Args>(args)...);
+            write("WARN : ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -84,7 +87,7 @@ public:
     void info(Arg&& arg, Args&&... args)
     {
         if (LogInfo <= _reportLevel) {
-            _write("INFO : ", forward<Arg>(arg), forward<Args>(args)...);
+            write("INFO : ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -92,7 +95,7 @@ public:
     void debug(Arg&& arg, Args&&... args)
     {
         if (LogDebug <= _reportLevel) {
-            _write("DEBUG: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("DEBUG: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -100,7 +103,7 @@ public:
     void trace(Arg&& arg, Args&&... args)
     {
         if (LogTrace <= _reportLevel) {
-            _write("TRACE: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("TRACE: ", forward<Arg>(arg), forward<Args>(args)...);
         }
     }
 
@@ -109,7 +112,7 @@ public:
         (*_outP) << std::flush;
     }
 
-    LogLevel getLogLevel() const
+    LogLevel reportLevel() const
     {
         return _reportLevel;
     }
@@ -117,6 +120,14 @@ public:
     void setReportLevel(LogLevel newLogLevel)
     {
         _reportLevel = newLogLevel;
+    }
+
+    template <typename Arg, typename... Args>
+    void write(Arg&& arg, Args&&... args)
+    {
+        *_outP << forward<Arg>(arg);
+        ((*_outP << forward<Args>(args)), ...);
+        *_outP << "\n";
     }
 
     ~Logger()
@@ -137,14 +148,6 @@ private:
             try { _foutP->close(); }
             catch (...) { }
         }
-    }
-
-    template <typename Arg, typename... Args>
-    void _write(Arg&& arg, Args&&... args)
-    {
-        *_outP << forward<Arg>(arg);
-        ((*_outP << forward<Args>(args)), ...);
-        *_outP << "\n";
     }
 
     string    _filename;
