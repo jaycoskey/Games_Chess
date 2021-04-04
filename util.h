@@ -10,87 +10,73 @@
 #include <set>
 #include <sstream>
 #include <type_traits>
+// #include <variant>
 #include <vector>
 
 using std::string;
 using std::ostream, std::ostringstream;
-using std::map, std::set, std::vector;
+using std::map, std::pair, std::set, std::vector;
 
-using Short = int16_t;
+using Short = int;
 using Col   = Short;
 using Row   = Short;
 using Hash  = std::size_t;
 
 
-// ---------- Color
-enum class Color {
-    Black,
-    White
-};
-ostream& operator<<(ostream& os, Color c) {
-    if (c == Color::Black) { os << 'B'; }
-    else { os << 'W'; }
+const Short VECTOR_CAPACITY_INCR = 25;
+
+// ---------- Collections
+template<typename T>
+bool doesContain(const vector<T>& vec, const T& val) {
+    return find(vec.begin(), vec.end(), val) != vec.end();
+}
+
+template <typename K, typename V>
+vector<pair<K, V>> mapToVector(const map<K, V>& src)
+{
+    return vector<pair<K, V>>(src.begin(), src.end());
+}
+
+template <typename K, typename V>
+ostream& operator<<(ostream& os, const map<K, V>& m) {
+    os << '{';
+    int i = 0;
+    for (const auto& [key, val] : m) {
+        if (i++ > 0) { os << ", "; }
+        os << key << ": " << val;
+    }
+    os << '}';
     return os;
 }
 
-Color opponent(Color color) {
-    return color == Color::Black ? Color::White : Color::Black;
-}
-
-const vector<Color> colors{Color::White, Color::Black};
-
-// ---------- Hash-related functions
-string showHash(Hash h) {
-    ostringstream oss;
-    oss << std::hex << h;
-    return oss.str();
-}
-
-// ---------- PRNG
-
-// Used for Zobrist hashing in board.h.
-// TODO: Replace default seed with one from high-resolution clock.
-// TODO: using hr_clock = std::chrono::high_resolution_clock;
-// TODO: using to_nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>;
-Hash random_bitstring() {
-    // TODO: static auto seed = to_nanoseconds(hr_clock.now().time_since_epoch()).count();
-    // TODO: auto t = std::chrono::high_resolution_clock::now();
-    // TODO: static auto seed = std::chrono::duration_cast<std::chrono::nanoseconds>(t.time_since_epoch()).count();
-    static std::mt19937_64 prng;  // TODO: {seed};
-    return prng();
-}
-
-// ---------- Collection functions
-template <typename K, typename V>
-vector<std::pair<K, V>> mapToVector(const map<K, V>& src)
-{
-    return vector<std::pair<K, V>>(src.begin(), src.end());
+template <typename T, typename U>
+ostream& operator<<(ostream& os, const pair<T, U>& p) {
+    os << '(' << p.first << ", " << p.second << ')';
+    return os;
 }
 
 template <typename T>
-std::string showSet(const set<T>& items) {
-    ostringstream oss;
-    oss << '{';
+ostream& operator<<(ostream& os, const set<T>& items) {
+    os << '{';
     int i = 0;
-    for (auto& item : items) {
-        if (i++ > 0) { oss << ", "; }
-        oss << item;
+    for (const auto& item : items) {
+        if (i++ > 0) { os << ", "; }
+        os << item;
     }
-    oss << '}';
-    return oss.str();
+    os << '}';
+    return os;
 }
 
 template <typename T>
-std::string showVector(const vector<T>& items) {
-    ostringstream oss;
-    oss << '[';
+ostream& operator<<(ostream& os, const vector<T>& items) {
+    os << '[';
     int i = 0;
-    for (auto& item : items) {
-        if (i++ > 0) { oss << ", "; }
-        oss << item;
+    for (const auto& item : items) {
+        if (i++ > 0) { os << ", "; }
+        os << item;
     }
-    oss << ']';
-    return oss.str();
+    os << ']';
+    return os;
 }
 
 template <typename T>
@@ -98,6 +84,61 @@ set<T> getUnion(const set<T>& a, const set<T>& b) {
     set<T> result{a};
     result.insert(b.begin(), b.end());
     return result;
+}
+
+template <typename K, typename V>
+vector<V> concatMap(const map<K, vector<V>>& m) {
+    vector<V> result;
+    for (auto& [key, vals] : m) {
+        std::copy(vals.begin(), vals.end(), std::back_inserter(result));
+    }
+    return result;
+}
+
+// ---------- Color
+enum class Color {
+    Black,
+    White
+};
+
+string to_string(Color c)
+{
+    return c == Color::Black ? "Black" : "White";
+}
+
+ostream& operator<<(ostream& os, Color c) {
+    if (c == Color::Black) { os << 'B'; }
+    else { os << 'W'; }
+    return os;
+}
+
+Color opponent(Color color)
+{
+    return color == Color::Black ? Color::White : Color::Black;
+}
+
+const vector<Color> allColors{Color::White, Color::Black};
+const Short COLORS_COUNT = 2;
+
+// ---------- Hash
+string test_to_string(Hash h)
+{
+    ostringstream oss;
+    oss << std::hex << h;
+    return oss.str();
+}
+
+// ---------- PRNG
+std::mt19937& prng() {
+    static std::random_device rd;
+    static std::mt19937 gen{rd()};
+    return gen;
+}
+
+// Used for Zobrist hashing in board.h.
+Hash random_bitstring() {
+    static std::mt19937_64 prng;
+    return prng();
 }
 
 // ---------- String
@@ -109,6 +150,16 @@ string repeatString(const string& input, int count) {
     }
     return result;
 }
+
+// ---------- Variant
+//  template<typename... Ts>
+//  std::ostream& operator<<(ostream& os, const std::variant<Ts...>& v)
+//  {
+//      std::visit( [&os](auto&& arg) { os << arg; }
+//                , v
+//                );
+//      return os;
+//  }
 
 // ---------- Underlying type, from Scott Meyers, Effective Modern C++ (for enums)
 template <typename E>
