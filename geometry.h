@@ -6,40 +6,40 @@
 #include <iostream>
 #include <set>
 #include <sstream>
-#include <stdexcept>
 #include <string>
 
 #include "util.h"
 
-using std::string;
-using std::ostream;
-using std::set;
 
 struct Dir;
-using Dirs = set<Dir>;
+using Dirs = std::set<Dir>;
 
 
-const Col BOARD_COLS = 8;
-const Row BOARD_ROWS = 8;
-const Short BOARD_SPACES = BOARD_COLS * BOARD_ROWS;
+constexpr Col BOARD_COLS = 8;
+constexpr Row BOARD_ROWS = 8;
+constexpr Short BOARD_SPACES = BOARD_COLS * BOARD_ROWS;
 
-const Col BOARD_KING_COL = 4;
-const Row BOARD_PAWN_PROMOTION_ROW = BOARD_ROWS - 1;
-const Row BOARD_EN_PASSANT_FROM_ROW = 4;
+constexpr Col BOARD_KING_COL = 4;
+constexpr Row BOARD_PAWN_PROMOTION_ROW = BOARD_ROWS - 1;
+constexpr Row BOARD_EN_PASSANT_FROM_ROW = 4;
 
 // ---------- Board index inversion
 
-Row homeRow(Color c) { return c == Color::Black ? BOARD_ROWS - 1 : 0; }
-Short invertIndex(Short index) { return BOARD_SPACES - 1 - index; }
-Short invertRow(Short index) {
-    return BOARD_SPACES - 1 - index
-        + 2 * (index % BOARD_COLS) - (BOARD_COLS - 1);
-}
+Row homeRow(Color c);
+Short invertIndex(Short index);
+Short invertRow(Short index);
 
 // ========================================
 // Direction
 
+struct Dir;
+
 struct Dir {
+    static const Dirs orthoDirs();
+    static const Dirs diagDirs();
+    static const Dirs allDirs();
+    static const Dirs knightDirs();
+
     Dir(Col x, Row y) : x{x}, y{y} {}
 
     Col x;
@@ -49,62 +49,31 @@ struct Dir {
     Dir operator+(const Dir& d) const { return Dir(x + d.x, y + d.y); }
     bool operator<(const Dir& other) const;
 
-    friend ostream& operator<<(ostream& os, const Dir& dir);
+    friend std::ostream& operator<<(std::ostream& os, const Dir& dir);
 };
 
-ostream& operator<<(ostream& os, const Dir& dir)
-{
-    os << '(' << dir.x << ", " << dir.y << ')';
-    return os;
-}
-
-bool Dir::operator<(const Dir& other) const
-{
-    if (x < other.x || (x == other.x && y < other.y)) { return true; }
-    return false;
-}
+std::ostream& operator<<(std::ostream& os, const Dir& dir);
 
 // ---------- Direction non-member functions
 
-Dir negx(const Dir& dir)  { return Dir(-dir.x,  dir.y); }
-Dir negy(const Dir& dir)  { return Dir( dir.x, -dir.y); }
-Dir negxy(const Dir& dir) { return Dir(-dir.x, -dir.y); }
+Dir negx(const Dir& dir);
+Dir negy(const Dir& dir);
+Dir negxy(const Dir& dir);
 
-Dirs dirPerms(const Dir& dir)
-{
-    return Dirs{Dir(dir.x, dir.y), Dir(dir.y, dir.x)};
-}
-
-Dirs dirSigns(const Dir& dir)
-{
-    auto result = Dirs{dir, negx(dir), negy(dir), negxy(dir)};
-    return result;
-}
-
-Dirs dirSignedPerms(const Dir& dir)
-{
-    Dirs result;
-    for (Dir d : dirPerms(dir)) { result.merge(dirSigns(d)); }
-    return result;
-}
-
-// ---------- Direction-valued constants
-
-Dirs orthoDirs   = dirSignedPerms(Dir(1,0));
-Dirs diagDirs    = dirSigns(Dir(1,1));
-Dirs allDirs     = getUnion(orthoDirs, diagDirs);
-
-Dirs knightDirs  = dirSignedPerms(Dir(1,2));
+Dirs dirPerms(const Dir& dir);
+Dirs dirSigns(const Dir& dir);
+Dirs dirSignedPerms(const Dir& dir);
 
 // ========================================
 // Position
 
-struct Pos {
+struct Pos
+{
     Pos(Col x, Row y) : x{x}, y{y} {}
     Pos(Short index) : Pos(div(index, BOARD_COLS)) {}
     Pos(div_t d) : x(d.rem), y(d.quot) {}
     Pos(const Pos& pos) : x(pos.x), y(pos.y) {}
-    Pos(const string& posStr);  // For testing
+    Pos(const std::string& posStr);  // For testing
 
     Col x;
     Row y;
@@ -119,7 +88,7 @@ struct Pos {
     Pos posLeft(Col col)  const { return Pos(x - col, y); }
     Pos posRight(Col col) const { return Pos(x + col, y); }
 
-    const string algNotation() const;
+    const std::string algNotation() const;
     Short index() const { return x + BOARD_COLS * y; }
     bool  isAt(Col col, Row row) const { return col == x && row == y; }
     bool  isOnBoard() const { return x >= 0 && y >= 0 && x < BOARD_COLS && y < BOARD_ROWS; }
@@ -139,39 +108,5 @@ struct Pos {
     bool operator<(const Pos& other) const;
     bool operator==(const Pos& other) const { return x == other.x && y == other.y; }
 
-    friend ostream& operator<<(ostream& os, const Pos& pos);
+    friend std::ostream& operator<<(std::ostream& os, const Pos& pos);
 };
-
-// ---------- Pos constructor
-Pos::Pos(const string& posStr)
-    : x{static_cast<Short>(tolower(posStr[0]) - 'a')}
-    , y{static_cast<Short>(stoi(posStr.substr(1)) - 1)}
-{}  // For testing
-
-// ---------- Pos read methods
-const string Pos::algNotation() const
-{
-    ostringstream oss;
-
-    if (x < 0)  { oss << 'L'; }
-    else if (x > BOARD_COLS - 1) { oss << 'R'; }
-    else { oss << char((unsigned char)('a') + x); }
-
-    if (y < 0) { oss << 'B'; }
-    else if (y > BOARD_ROWS - 1) { oss << 'T'; }
-    else { oss << y + 1; }
-
-    return oss.str();
-}
-
-// ---------- Pos operators
-bool Pos::operator<(const Pos& other) const
-{
-    return x < other.x || (x == other.x && y < other.y);
-}
-
-ostream& operator<<(ostream& os, const Pos& pos)
-{
-    os << pos.algNotation();
-    return os;
-}
