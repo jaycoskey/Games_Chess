@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 #include "move.h"
+#include "geometry.h"
 #include "game_state.h"
 
 

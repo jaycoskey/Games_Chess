@@ -6,8 +6,13 @@
 #include <string>
 
 #include "util.h"
+#include "geometry.h"
+// #include "player.h"
 #include "piece.h"
 #include "board.h"
+#include "move.h"
+#include "game_state.h"
+#include "game.h"
 
 
 class ScopedTracer {
@@ -16,12 +21,12 @@ public:
         : _func_name{func_name}, _verbose{verbose}
     {
         if (_verbose) {
-            cout << "Entering " << _func_name << "\n";
+            std::cout << "Entering " << _func_name << "\n";
         }
     }
     ~ScopedTracer() {
         if (_verbose) {
-            cout << "Exiting " << _func_name << "\n";
+            std::cout << "Exiting " << _func_name << "\n";
         }
     }
 private:
@@ -34,41 +39,41 @@ private:
 //     return std::fabs(a - b) < eps;
 // }
 
-void add_bk_to(Board& b, const string& pos, Short lmi=0) {
+void add_bk_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::Black, PieceType::King,   pos, lmi);
 }
-void add_bq_to(Board& b, const string& pos, Short lmi=0) {
+void add_bq_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::Black, PieceType::Queen,  pos, lmi);
 }
-void add_br_to(Board& b, const string& pos, Short lmi=0) {
+void add_br_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::Black, PieceType::Rook,   pos, lmi);
 }
-void add_bb_to(Board& b, const string& pos, Short lmi=0) {
+void add_bb_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::Black, PieceType::Bishop, pos, lmi);
 }
-void add_bn_to(Board& b, const string& pos, Short lmi=0) {
+void add_bn_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::Black, PieceType::Knight, pos, lmi);
 }
-void add_bp_to(Board& b, const string& pos, Short lmi=0) {
+void add_bp_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::Black, PieceType::Pawn,   pos, lmi);
 }
 
-void add_wk_to(Board& b, const string& pos, Short lmi=0) {
+void add_wk_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::King,   pos, lmi);
 }
-void add_wq_to(Board& b, const string& pos, Short lmi=0) {
+void add_wq_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::Queen,  pos, lmi);
 }
-void add_wr_to(Board& b, const string& pos, Short lmi=0) {
+void add_wr_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::Rook,   pos, lmi);
 }
-void add_wb_to(Board& b, const string& pos, Short lmi=0) {
+void add_wb_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::Bishop, pos, lmi);
 }
-void add_wn_to(Board& b, const string& pos, Short lmi=0) {
+void add_wn_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::Knight, pos, lmi);
 }
-void add_wp_to(Board& b, const string& pos, Short lmi=0) {
+void add_wp_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::Pawn,   pos, lmi);
 }
 
@@ -119,5 +124,5 @@ Board mkCheckmatesBoard() {
 }
 
 void printHRule() {
-    cout << "----------------------------------------\n";
+    std::cout << "----------------------------------------\n";
 }

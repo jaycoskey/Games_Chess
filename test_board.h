@@ -7,10 +7,10 @@
 #include <gtest/gtest.h>
 
 #include "util.h"
+// #include "geometry.h"
+// #include "player.h"
 #include "piece.h"
 #include "board.h"
-
-// using std::cout;
 
 
 TEST(BoardTest, BoardKings) {

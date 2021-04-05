@@ -6,24 +6,22 @@
 
 #include "logger.h"
 
-using std::cout;
-
 
 void test_logger_file()
 {
     ScopedTracer(__func__);
-    Logger logger{LogWarn, "test_logger"};
-    cout << "test_logger_file: Check log file with a name that starts with 'test_logger'.\n";
-    logger.error("ERROR!");
+    Logger::init(LogLevel::LogWarn, "test_logger");
+    std::cout << "test_logger_file: Check log file with a name that starts with 'test_logger'.\n";
+    Logger::error("ERROR!");
 }
 
 void test_logger_stderr()
 {
     ScopedTracer(__func__);
-    cout << "This function should print exactly one line of output, with an urgent message.\n";
-    Logger logger{LogWarn};
-    logger.error("\tExpected error message---", 123456789);
-    logger.info("Unimportant message!");
+    std::cout << "This function should print exactly one line of output, with an urgent message.\n";
+    Logger::init(LogLevel::LogWarn);
+    Logger::error("\tExpected error message---", 123456789);
+    Logger::info("Unimportant message!");
 }
 
 void test_logger()

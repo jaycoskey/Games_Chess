@@ -2,12 +2,13 @@
 
 #pragma once
 
-// #include <iostream>
 #include <string>
 
 #include <gtest/gtest.h>
 
 #include "util.h"
+#include "geometry.h"
+// #include "player.h"
 #include "piece.h"
 #include "board.h"
 #include "move.h"
@@ -15,9 +16,6 @@
 
 #include "logger.h"
 #include "test_common.h"
-
-// using std::cout;
-using std::string;
 
 
 void _test_move_checkmate(const Board& bRef, Board& b, Move move) {
@@ -35,7 +33,7 @@ void _test_move_checkmate(const Board& bRef, Board& b, Move move) {
 }
 
 // Black can castle Kingside & Queenside. White cannot castle on either side.
-void _test_move_pieceType(PieceType pt, int validMoveCount, const string& posStr="d4") {
+void _test_move_pieceType(PieceType pt, int validMoveCount, const std::string& posStr="d4") {
     ScopedTracer(__func__);
     Board b{false};
 
@@ -70,7 +68,7 @@ void test_move_castling() {
     ScopedTracer(__func__);
     Board b = mkCastlingBoard();
     Board bRef = mkCastlingBoard();
-    cout << b << "\n";
+    std::cout << b << "\n";
 
     Moves blackMoves = concatMap(Move::getValidPlayerMoves(b, Color::Black));
     const Move& bksCastle = Move(Color::Black, PieceType::King, Pos{"e8"}, Pos{"g8"});
@@ -93,7 +91,7 @@ void test_move_checkmate() {
     ScopedTracer(__func__);
     Board b = mkCheckmatesBoard();
     Board bRef = mkCheckmatesBoard();
-    cout << b << "\n";
+    std::cout << b << "\n";
 
     Moves blackMoves = concatMap(Move::getValidPlayerMoves(b, Color::Black));
     const Move& bqxpMate = Move(Color::Black, PieceType::Queen, Pos{"h3"}, Pos{"h2"}, b.pieceAt(Pos{"h2"}));
@@ -112,7 +110,7 @@ void test_move_pawn_movement() {
     ScopedTracer(__func__);
     Board b = mkCheckmatesBoard();
     Board bRef = mkCheckmatesBoard();
-    cout << b << "\n";
+    std::cout << b << "\n";
 
     Moves blackMoves = concatMap(Move::getValidPlayerMoves(b, Color::Black));
 
@@ -135,14 +133,14 @@ void test_move_pawn_movement() {
     _test_move_undo(bRef, b, pawnStep2);
 
     pawnStep2.apply(b);
-    cout << "test_pawn_movement: After applying 'pawnStep2', there is a valid en passant move:\n";
-    cout << b << "\n";
+    std::cout << "test_pawn_movement: After applying 'pawnStep2', there is a valid en passant move:\n";
+    std::cout << b << "\n";
     Moves postStep2Moves = concatMap(Move::getValidPlayerMoves(b, Color::White));
     const Move& enPassantMove = Move( Color::White, PieceType::Pawn, Pos{"a5"}, Pos{"b6"}
                                     , b.pieceAt(Pos{"b6"}), true);
     ASSERT_TRUE(doesContain(postStep2Moves, enPassantMove));
     pawnStep2.applyUndo(b);
-    cout << "_test_pawn_movement: After applyUndo():\n" << b << "\n";
+    std::cout << "_test_pawn_movement: After applyUndo():\n" << b << "\n";
     ASSERT_EQ(b, bRef);
 
     // Promotion
@@ -160,7 +158,7 @@ void test_move_pawn_movement() {
     const Move& blockedStep2 = Move(Color::White, PieceType::Pawn, Pos{"f1"}, Pos{"f3"}, nullptr, true);
     ASSERT_FALSE(doesContain(whiteMoves, blockedStep2));
 
-    cout << "test_pawn_movement: Exiting\n";
+    std::cout << "test_pawn_movement: Exiting\n";
 }
 
 void test_move_pieceTypes() {

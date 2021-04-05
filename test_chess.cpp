@@ -5,7 +5,7 @@
 #include "test_common.h"
 
 #include "test_board.h"
-#include "test_board_state.h"
+#include "test_game_state.h"
 #include "test_logger.h"
 #include "test_move.h"
 #include "test_util.h"
