@@ -1,4 +1,18 @@
-// Copyright 2021, by Jay M. Coskey
+// Games_Chess
+// Copyright (C) 2021, by Jay M. Coskey
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <regex>
 #include <string>
@@ -17,7 +31,7 @@ using std::cin, std::cout, std::ostringstream;
 using std::pair, std::map, std::vector;
 // using GetPlayerMove = std::function<ExtMove(const Board&, Color, const Pos2Moves&)>;
 
-// ======================================== 
+// ========================================
 // enum MoveType
 
 ostream& operator<<(ostream& os, MoveType moveType) {
@@ -416,7 +430,7 @@ ExtMove Move::queryPlayerMove(
         std::smatch singleCmdMatch;
         if (std::regex_match(input, singleCmdMatch, singleCmdRegex)) {
             string cmd = singleCmdMatch[1];
-            
+
             Logger::write("Command entered: ", cmd, "\n");
 
             // Commands not involving piece movement
