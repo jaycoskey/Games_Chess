@@ -1,0 +1,49 @@
+Categories:
+  * ANLZ = Analyze game & bot stats
+  * BOTS = Bot functionality
+  * BUGS = Bug fixes
+  * GAME = Game functionality
+  * PERF = Performance
+  * TEST = Testing
+  * USBL = Usability
+  * WORK = Removal of workarounds
+  * MISC = Misc
+
+Priorities:
+  * H=High
+  * M=Medium
+  * L=Low
+
+Tasks (No commitment, effort estimates, or estimated completion dates):
+  * TODO:ANLZ:H: Support for interactive analysis of player to print game history.
+
+  * TODO:BOTS:H: Bots. Add minimax bot strategy.
+  * TODO:BOTS:L: Bots. Add MCTS bot strategy.
+
+  * TODO:BUGS:M: Cache captured pieces to preserve MoveIndex history on Undo.
+  * TODO:BUGS:M: Determine why the concise match summary reports 2 buckets each for the 75 Move Rule (~245 & ~5 instances/1000) and (416 & 3) Insufficient Resources.
+
+  * TODO:GAME:H: Add board/piece/rule variations via config (e.g., hexagonal chess, Checker-Pawn chess).
+  * TODO:GAME:H: Make board/piece/rule variations config-driven.
+  * TODO:GAME:M: Add means to save & reload games.
+  * TODO:GAME:H: Add Undo command.
+  * TODO:GAME:L: Add logging control via command-line options.
+  * TODO:GAME:L: At startup, query for names of human players.
+  * TODO:GAME:L: Support play over a network.
+
+  * TODO:PERF:H: Disable tracking MoveIndex history for pieces other than K, R, P.
+  * TODO:PERF:M: Add ability to suppress output in batch mode.
+  * TODO:PERF:M: Modify to support efficient parallelism---poss. incl. bitboards & GPUs.
+  * TODO:PERF:L: Use piece move direction to short-circuit search in isAttacking/isAttacked.
+
+  * TODO:TEST:H: Increase test coverage.
+
+  * TODO:GAME:L: Add GUI (possibly using open source front-end).
+  * TODO:USBL:L: Provide console text positioning via curses.
+
+  * TODO:WORK:L: Check to see if Piece::pieceValue is ever called with invalid piece type.
+  * TODO:WORK:L: Determine when Board::rollBackPmocHistory is called with empty history.
+
+  * TODO:MISC:M: Replace VecBool with bitarray & possibly de Bruijn sequences?
+  * TODO:MISC:L: Make Board::color2PiecePs private. Add public Piece iterator.
+  * TODO:MISC:L: Seed Zobrist PRNG from std::chrono::high_resolution_clock's nanosecond count.
