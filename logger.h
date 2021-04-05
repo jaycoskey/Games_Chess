@@ -9,10 +9,6 @@
 #include <iostream>
 #include <sstream>
 
-using std::string;
-using std::cout, std::ofstream, std::ostream;
-using std::forward;
-
 
 enum LogLevel {
         LogOff=0,
@@ -28,15 +24,16 @@ enum LogLevel {
 class Logger
 {
 public:
-    Logger(LogLevel reportLevel)
-        : _foutP{nullptr}
-        , _outP{&std::cerr}
-        , _reportLevel{reportLevel}
-    { }
-
-    Logger(LogLevel reportLevel, const string& base_filename)
-        : _reportLevel{reportLevel}
+    static void init(LogLevel reportLevel /* =LogLevel::LogError */)
     {
+        _foutP = nullptr;
+        _outP = &std::cerr;
+        _reportLevel = reportLevel;
+    }
+
+    static void init(LogLevel reportLevel, const std::string& base_filename)
+    {
+        _reportLevel = reportLevel;
         time_t now;
         time(&now);
         char suffix[sizeof "20201231_125959 "];
@@ -45,115 +42,120 @@ public:
         _setOfstream();
     }
 
-    void logToCerr() {
+    static void logToCerr() {
+        assert(_outP);
         _outP = &std::cerr;
     }
 
-    void logToCout() {
+    static void logToCout() {
+        assert(_outP);
         _outP = &std::cout;
     }
 
-    void logToFile(const string& filename) {
+    static void logToFile(const std::string& filename) {
         _closeFile();
         _filename = filename;
         _setOfstream();
     }
 
     template <typename Arg, typename... Args>
-    void log(LogLevel eventLevel, Arg&& arg, Args&&... args)
+    static void log(LogLevel eventLevel, Arg&& arg, Args&&... args)
     {
         if (eventLevel <= _reportLevel) {
-            write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("ERROR: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 
     template <typename Arg, typename... Args>
-    void error(Arg&& arg, Args&&... args)
+    static void error(Arg&& arg, Args&&... args)
     {
         if (LogError <= _reportLevel) {
-            write("ERROR: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("ERROR: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 
     template <typename Arg, typename... Args>
-    void warn(Arg&& arg, Args&&... args)
+    static void warn(Arg&& arg, Args&&... args)
     {
         if (LogWarn <= _reportLevel) {
-            write("WARN : ", forward<Arg>(arg), forward<Args>(args)...);
+            write("WARN : ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 
     template <typename Arg, typename... Args>
-    void info(Arg&& arg, Args&&... args)
+    static void info(Arg&& arg, Args&&... args)
     {
         if (LogInfo <= _reportLevel) {
-            write("INFO : ", forward<Arg>(arg), forward<Args>(args)...);
+            write("INFO : ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 
     template <typename Arg, typename... Args>
-    void debug(Arg&& arg, Args&&... args)
+    static void debug(Arg&& arg, Args&&... args)
     {
         if (LogDebug <= _reportLevel) {
-            write("DEBUG: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("DEBUG: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 
     template <typename Arg, typename... Args>
-    void trace(Arg&& arg, Args&&... args)
+    static void trace(Arg&& arg, Args&&... args)
     {
         if (LogTrace <= _reportLevel) {
-            write("TRACE: ", forward<Arg>(arg), forward<Args>(args)...);
+            write("TRACE: ", std::forward<Arg>(arg), std::forward<Args>(args)...);
         }
     }
 
-    void flush()
+    static void flush()
     {
+        assert(_outP);
         (*_outP) << std::flush;
     }
 
-    LogLevel reportLevel() const
+    static LogLevel reportLevel()
     {
+        assert(_outP);
         return _reportLevel;
     }
 
-    void setReportLevel(LogLevel newLogLevel)
+    static void setReportLevel(LogLevel newLogLevel)
     {
+        assert(_outP);
         _reportLevel = newLogLevel;
     }
 
     template <typename Arg, typename... Args>
-    void write(Arg&& arg, Args&&... args)
+    static void write(Arg&& arg, Args&&... args)
     {
-        *_outP << forward<Arg>(arg);
-        ((*_outP << forward<Args>(args)), ...);
+        assert(_outP);
+        *_outP << std::forward<Arg>(arg);
+        ((*_outP << std::forward<Args>(args)), ...);
         *_outP << "\n";
     }
 
-    ~Logger()
+    static void close()
     {
+        assert(_outP);
         *(_outP) << std::flush;;
         _closeFile();
     }
 
 private:
-    void _setOfstream() {
-        _foutP = new ofstream{};
+    static void _setOfstream() {
+        _foutP = new std::ofstream{};
         _foutP->open(_filename, std::ios_base::out);
         _outP = _foutP;
     }
 
-    void _closeFile() {
+    static void _closeFile() {
         if (_foutP) {
             try { _foutP->close(); }
             catch (...) { }
         }
     }
 
-    string    _filename;
-    ofstream* _foutP;
-    ostream*  _outP;
-    LogLevel  _reportLevel;
+    static std::string    _filename;
+    static std::ofstream* _foutP;
+    static std::ostream*  _outP;
+    static LogLevel       _reportLevel;
 };
-
-Logger logger{LogLevel::LogError};
