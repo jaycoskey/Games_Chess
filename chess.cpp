@@ -96,10 +96,10 @@ int main(int argc, char **argv) {
         }
     }
 
-    logger.setReportLevel(LogError);
-    // logger.setReportLevel(LogTrace);
-    logger.logToCout();
-    // logger.logToFile("foo.txt");
+    Logger::init(LogError);
+    // Logger::setReportLevel(LogTrace);
+    Logger::logToCout();
+    // Logger::logToFile("foo.txt");
 
     Game game{};
     game.play(matchGameCount, wPlayer, bPlayer);
