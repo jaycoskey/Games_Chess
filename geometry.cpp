@@ -46,7 +46,7 @@ const Dirs Dir::diagDirs() {
 }
 
 const Dirs Dir::allDirs() {
-    static Dirs result = getUnion(Dir::orthoDirs(), Dir::diagDirs());
+    static const Dirs result = getUnion(Dir::orthoDirs(), Dir::diagDirs());
     return result;
 }
 

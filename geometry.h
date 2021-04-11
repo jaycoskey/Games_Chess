@@ -49,17 +49,16 @@ Short invertRow(Short index);
 struct Dir;
 
 struct Dir {
-    static const Dirs orthoDirs();
-    static const Dirs diagDirs();
-    static const Dirs allDirs();
-    static const Dirs knightDirs();
+    static const Dirs orthoDirs();   // Directions that a Rook moves
+    static const Dirs diagDirs();    // Directions that a Bishop moves
+    static const Dirs allDirs();     // Directions that a King or Queen moves
+    static const Dirs knightDirs();  // Directions that a Knight moves
 
     Dir(Col x, Row y) : x{x}, y{y} {}
 
     Col x;
     Row y;
 
-    bool isDir(Col dx, Row dy) { return dx == x && dy == y; }
     Dir operator+(const Dir& d) const { return Dir(x + d.x, y + d.y); }
     bool operator<(const Dir& other) const;
 
@@ -83,12 +82,14 @@ Dirs dirSignedPerms(const Dir& dir);
 
 struct Pos
 {
+    // ---------- Constructors
     Pos(Col x, Row y) : x{x}, y{y} {}
     Pos(Short index) : Pos(div(index, BOARD_COLS)) {}
     Pos(div_t d) : x(d.rem), y(d.quot) {}
     Pos(const Pos& pos) : x(pos.x), y(pos.y) {}
     Pos(const std::string& posStr);  // For testing
 
+    // ---------- Data
     Col x;
     Row y;
 
@@ -102,8 +103,9 @@ struct Pos
     Pos posLeft(Col col)  const { return Pos(x - col, y); }
     Pos posRight(Col col) const { return Pos(x + col, y); }
 
+    // Other Pos read methods
     const std::string algNotation() const;
-    Short index() const { return x + BOARD_COLS * y; }
+    Short index() const { return x + BOARD_COLS * y; }  // 0=lower-left; 63=upper-right
     bool  isAt(Col col, Row row) const { return col == x && row == y; }
     bool  isOnBoard() const { return x >= 0 && y >= 0 && x < BOARD_COLS && y < BOARD_ROWS; }
     bool  isPawnInitialPosition(Color color) const { return toRelRow(color) == 1; }
