@@ -40,12 +40,6 @@ enum class CaptureAbility {
     MustNotCapture
 };
 
-enum class CheckType {
-    None,
-    Check,
-    CheckMate
-};
-
 // ========================================
 // MoveType
 
@@ -70,11 +64,12 @@ public:
     static const Moves&           getMoveHistory() { return Move::_moveHistory; };
 
     static const std::string      history_to_pgn();
-    static Move&                  prevMove() { return _moveHistory.back(); }
+    static Move& prevMove() { return _moveHistory.back(); }
 
-    static       void             reset() { _moveHistory.clear(); }
+    static void  reset() { _moveHistory.clear(); }
 
     // ---------- Public static methods (attacking / moving rules)
+    // The attack methods help determine whethera King is in check, and whether a Player can castle.
     static bool isAttacked(const Board& b, const Pos& tgtPos, Color tgtColor);
     static bool isAttacking(const Board& b, const Piece& attacker, const Pos& tgtPos
                            , const Dirs& dirs, Short maxSteps=0
@@ -84,6 +79,7 @@ public:
     static const Moves pawnMoveRule(const Board& b, Color c, const Pos& pos);
 
     // ---------- Public static methods (get move / interactivity / strategy)
+    // Get ExtMove from Player if Player is human; otherwise get it from appropriate function. 
     static ExtMove getPlayerMove(
                        PlayerType playerType
                        , const Board& b, Color c, const Pos2Moves& validPlayerMoves
@@ -93,7 +89,12 @@ public:
                        , Short maxSteps=0
                        , CaptureAbility captureAbility=CaptureAbility::CanCapture
                        );
+
+    // getValidPlayerMoves is the union of calls to getValidPieceMoves,
+    //     with self-check moves filtered out.
     static const Pos2Moves getValidPlayerMoves(const Board& b, Color c);
+
+    // Get ExtMove from human player
     static ExtMove queryPlayerMove(
                        const Board& b, Color c
                        , const Pos2Moves& validPlayerMoves
@@ -182,6 +183,9 @@ private:
 // ========================================
 // ExtMove
 
+// On a given turn, a Player can Move a Piece.
+// But a Player can also claim a Draw, or concede, or agree to a Draw or Win/Loss.
+// This class extends the Move class, and allows for the other possibilities.
 struct ExtMove {
     ExtMove()
         : optMove{std::nullopt}, isDrawClaim{false}, agreedGameEnd{GameEnd::InPlay}
@@ -204,6 +208,8 @@ struct ExtMove {
 
 // ========================================
 
+// When valid moves are presented to a human Player, the moves are sorted by the type of Piece moving,
+//     with moves of higher-valued pieces displayed before moves of lower-valued pieces.
 class PosMovesComparator {
 public:
     PosMovesComparator(const Board& b) : _b{b} {}
