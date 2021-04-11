@@ -26,6 +26,7 @@
 #include "move.h"
 
 
+// State of Game (Win, Draw, or still in play) determined after each move.
 class GameState {
 public:
     GameState();
@@ -44,6 +45,8 @@ private:
     GameEnd   _gameEnd;
     WinType   _winType;
     DrawFlags _drawFlags;
+
+    // isCheck and isCheckmate are copied into the last Move instance.
     bool      _isCheck;
     bool      _isCheckmate;
 
