@@ -47,3 +47,4 @@ Tasks (No commitment, effort estimates, or estimated completion dates):
   * TODO:MISC:M: Replace VecBool with bitarray & possibly de Bruijn sequences?
   * TODO:MISC:L: Make Board::color2PiecePs private. Add public Piece iterator.
   * TODO:MISC:L: Seed Zobrist PRNG from std::chrono::high_resolution_clock's nanosecond count.
+  * TODO:MISC:L: Add ScopedLogger class w/ constructor that initializes Logger's static data, & destructor that calls close().

@@ -64,5 +64,5 @@
  * Upon exiting, the program will output a "batch summary", describing the way each of the match games ended.
  
  ## Personal note
- * This program started as a one-day exercise to see how far I could get toward a chess game implementation. After that first day, I decided to keep       going. I have implemented several variants of hexagonal chess before in a different language, and might some day extend this implementation to include    variant boards and rule.
+ * This program started as a one-day exercise to see how far I could get toward a chess game implementation. After that first day, I decided to keep going. I have implemented several variants of hexagonal chess before in a different language, and might some day extend this implementation to include variant boards, pieces, and/or rules.
  * Working on a personal project means you can use comma-first formatting.  :)
