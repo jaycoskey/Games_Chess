@@ -26,7 +26,6 @@ Implementation outline:
     * Game state enums // Check/Mate; WinBlack/WinWhite/Draw; Type of Draw, etc.
   * Game
     * class Game
-    * enum CheckType   // Check / Checkmate
     * Contains Board
     * Contains Players
   * GameState
