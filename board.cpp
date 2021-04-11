@@ -111,17 +111,7 @@ Board::Board(const Board& other)
     assert(_pmocHistory.size() < 10'000);
 }
 
-// For custom board layouts, including testing.
-// Board::Board(const vector<PieceData>& layout)
-//     : _currentMoveIndex{1}
-// {
-//     for (const PieceData& pd : layout) {
-//         addPieceTo(std::get<0>(pd), std::get<1>(pd), std::get<2>(pd));
-//     }
-// }
-
 // ---------- Piece data - read
-
 
 PieceP Board::pieceAt(const Pos& pos) const
 {
@@ -309,19 +299,20 @@ bool Board::hasInsufficientResources() const
     return false;
 }
 
+// Find the largest number of times a Board position/Hash has occurred for this Color.
 std::size_t Board::maxBoardRepetitionCount(Color c) const {
     if (_boardHashHistory.find(c) == _boardHashHistory.end()) {
         return 0;
     }
-    const Hash2MoveIndexSet& h2mi = _boardHashHistory.at(c);
-    vector<MoveIndex> repCounts{};
-    std::transform( h2mi.begin(), h2mi.end(), std::back_inserter(repCounts)
-                  , [](const std::pair<const Hash, MoveIndexSet>& hmi)
-                      { return hmi.second.size(); }
-                  );
-    return repCounts.size() == 0 ? 0 : *std::max_element(repCounts.begin(), repCounts.end());
+    std::size_t result = 0;
+    const Hash2MoveIndexes& h2mi = _boardHashHistory.at(c);
+    for (auto const& kv : h2mi) {
+        if (kv.second.size() > result) { result = kv.second.size(); }
+    }
+    return result;
 }
 
+// Moves since last Pawn move or capture. Used to determine Draw from lack of progress.
 MoveIndex Board::movesSinceLastPmoc() const {
     assert(_pmocHistory.size() <= 10'000);
     auto found = std::find(_pmocHistory.rbegin(), _pmocHistory.rend(), true);
@@ -333,6 +324,7 @@ void Board::printBoardHashRepetitions() const {
     printBoardHashRepetitions(Color::White);
 }
 
+// For each Board repetition, print how many times it has recurred. 
 void Board::printBoardHashRepetitions(Color c) const {
     cout << "Color: " << (c == Color::Black ? "Black" : "White") << ":\n";
     bool foundRepetition = false;
@@ -350,6 +342,7 @@ void Board::printBoardHashRepetitions(Color c) const {
     }
 }
 
+// Print a list of Pieces still on the Board.
 void Board::printPieces() const {
     for (const auto& [c, piecePs] : color2PiecePs) {
         cout << "Pieces with color " << c << '(' << piecePs.size() << "):\n";
@@ -360,6 +353,8 @@ void Board::printPieces() const {
 }
 
 // ---------- Board data - write
+
+// Set up standard Board layout.
 void Board::initPieces() {
     // board.erase();
 
@@ -378,11 +373,13 @@ void Board::initPieces() {
     for (Short index : pawn_indexes)   { addPiecePair(PieceType::Pawn,   index); }
 }
 
+// To support undo, remove record of the last Board Hash and the MoveIndex when it occurred.
 void Board::rollBackBoardHashHistory(Color c) {
     Hash h = std::hash<Board>{}(*this);
     _boardHashHistory[c][h].erase(_currentMoveIndex);
 }
 
+// To support undo, remove the last Move from the Pawn move or capture history.
 void Board::rollBackPmocHistory() {
     // TODO: Determine what causes this to be called with empty history.
     if (_pmocHistory.size() > 1) {
@@ -390,11 +387,13 @@ void Board::rollBackPmocHistory() {
     }
 }
 
+// To support Draw conditions, record the current Board hash and the current MoveIndex.
 void Board::updateBoardHashHistory(Color c) {
     Hash h = std::hash<Board>{}(*this);
     _boardHashHistory[c][h].insert(_currentMoveIndex);
 }
 
+// To support Draw conditions, record whether this MoveIndex has a Pawn move or capture.
 void Board::updatePmocHistory(bool isPawnMoveOrCapture) {
     assert(_pmocHistory.size() == (unsigned long) _currentMoveIndex);
     _pmocHistory.push_back(isPawnMoveOrCapture);
