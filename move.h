@@ -222,7 +222,7 @@ public:
         assert(bPos.isOnBoard());
         PieceValue pmaVal = Piece::pieceValue(_b.pieceAt(aPos).get()->pieceType());
         PieceValue pmbVal = Piece::pieceValue(_b.pieceAt(bPos).get()->pieceType());
-        return (pmaVal < pmbVal)
+        return (pmaVal > pmbVal)
             || (pmaVal == pmbVal && !(pma.first < pmb.first));
     }
 private:
