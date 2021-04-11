@@ -36,12 +36,6 @@ enum class Color {
 constexpr Short VECTOR_CAPACITY_INCR = 25;
 
 // ---------- Collections
-template<typename T>
-bool doesContain(const std::vector<T>& vec, const T& val)
-{
-    return find(vec.begin(), vec.end(), val) != vec.end();
-}
-
 template <typename K, typename V>
 std::vector<std::pair<K, V>> mapToVector(const std::map<K, V>& src)
 {
@@ -113,14 +107,13 @@ std::vector<V> concatMap(const std::map<K, std::vector<V>>& m)
 }
 
 // ---------- Color
+const std::vector<Color> allColors{Color::White, Color::Black};
+constexpr Short COLORS_COUNT = 2;
+
+Color opponent(Color color);
 std::string to_string(Color c);
 
 std::ostream& operator<<(std::ostream& os, Color c);
-
-Color opponent(Color color);
-
-const std::vector<Color> allColors{Color::White, Color::Black};
-constexpr Short COLORS_COUNT = 2;
 
 // ---------- Hash
 std::string test_to_string(Hash h);

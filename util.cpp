@@ -37,6 +37,11 @@ using Row   = Short;
 using Hash  = std::size_t;
 
 
+Color opponent(Color color)
+{
+    return color == Color::Black ? Color::White : Color::Black;
+}
+
 string to_string(Color c)
 {
     return c == Color::Black ? "Black" : "White";
@@ -47,14 +52,6 @@ ostream& operator<<(ostream& os, Color c) {
     else { os << 'W'; }
     return os;
 }
-
-Color opponent(Color color)
-{
-    return color == Color::Black ? Color::White : Color::Black;
-}
-
-// const vector<Color> allColors{Color::White, Color::Black};
-// const Short COLORS_COUNT = 2;
 
 // ---------- Hash
 string test_to_string(Hash h)

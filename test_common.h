@@ -91,6 +91,12 @@ void add_wp_to(Board& b, const std::string& pos, Short lmi=0) {
     b.addPieceTo(Color::White, PieceType::Pawn,   pos, lmi);
 }
 
+template<typename T>
+bool doesContain(const std::vector<T>& vec, const T& val)
+{
+    return find(vec.begin(), vec.end(), val) != vec.end();
+}
+
 // Black can castle Kingside & Queenside. White cannot castle on either side.
 Board mkCastlingBoard() {
     Board b{false};
