@@ -107,6 +107,6 @@ void Piece::updateMoveIndexHistory(MoveIndex mi)
 ostream& operator<<(ostream& os, const Piece& piece)
 {
     os << piece._color << piece._pieceType
-       << "_@_" << piece._pos << "=index#" << piece.index();
+       << "_@_" << piece._pos << "=index#" << piece.pos().index();
     return os;
 }

@@ -69,7 +69,6 @@ public:
 
     PieceType pieceType() const { return _pieceType; }
 
-    Short index() const { return _pos.x + _pos.y * BOARD_COLS; }
     Col   col() const { return _pos.x; }
     Row   row() const { return _pos.y; }
     Pos   pos() const { return _pos; }
@@ -91,7 +90,9 @@ private:
     Color     _color;
     PieceType _pieceType;
     Pos       _pos;
-    MoveIndexHistory _moveIndexHistory;  // First move=1. Never moved=0.
+
+    // First move is at ...[1]. The value at ...[0] acts as a "reverse sentinel".
+    MoveIndexHistory _moveIndexHistory;
 
     friend std::ostream& operator<<(std::ostream& os, const Piece& piece);
 };
