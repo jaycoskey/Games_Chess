@@ -30,40 +30,39 @@
 using Players = std::vector<Player>;
 
 // ---------- Piece-related aliases
-using PieceData  = std::tuple<Color, PieceType, Short>;
 using PieceP     = std::shared_ptr<Piece>;
 using PiecePs    = std::set<PieceP>;
-using PieceTypes = std::vector<PieceType>;
+using PieceTypes = std::vector<PieceType>;  // Supports testing for Draw by InsufficientResources
 
 // ---------- Move-related aliases
 class Move;
 
-using Moves             = std::vector<Move>;
-using MoveIndexSet      = std::set<MoveIndex>;
-using MoveIndexVec      = std::vector<MoveIndex>;
-using Hash2MoveIndexSet = std::map<Hash, MoveIndexSet>;
+using Moves            = std::vector<Move>;
+using MoveIndexes      = std::set<MoveIndex>;  // MoveIndexes at which a given Board Hash occurred
+using Hash2MoveIndexes = std::map<Hash, MoveIndexes>;
 
 class Board;
-using IsAttackingRule   = std::function<bool(const Board& b, const Piece& attacker, const Pos& tgtPos)>;
-using MoveRule          = std::function<Moves(const Board&, Color, const Pos&)>;
+using IsAttackingRule  = std::function<bool(const Board& b, const Piece& attacker, const Pos& tgtPos)>;
+using MoveRule         = std::function<Moves(const Board&, Color, const Pos&)>;
 
 // ---------- Board-related aliases
-using Color2KingP       = std::map<Color, PieceP>;
-using Color2PiecePs     = std::map<Color, PiecePs>;
-using Pos2PieceP        = std::map<Pos, PieceP>;
+using Color2KingP      = std::map<Color, PieceP>;   // For storage of Kings by Color
+using Color2PiecePs    = std::map<Color, PiecePs>;  // For storage of Pieces by Color
+using Pos2PieceP       = std::map<Pos, PieceP>;     // For storage of Pieces by location
 
 using PieceType2IsAttackingRule = std::map<PieceType, IsAttackingRule>;
 using PieceType2MoveRule        = std::map<PieceType, MoveRule>;
 
+// For Zobrist hashing. See Wikipedia.
 using ZIndex = int;
 using ZTable = std::array< std::array<Hash, COLORS_COUNT * PIECE_TYPES_COUNT>
                          , BOARD_COLS * BOARD_ROWS
                          >;
 
-using BoardHashHistory  = std::map<Color, Hash2MoveIndexSet>;
-using VecBool = std::vector<bool>;
+using BoardHashHistory  = std::map<Color, Hash2MoveIndexes>;  // Record of Board Hash history, for Draw detection
+using VecBool = std::vector<bool>;  // Record of Game PMOC progress (PMOC=Pawn move or capture)
 
-
+// Part of GameState, which determines whether the Game has ended
 enum class GameEnd {
     InPlay,
     Draw,
@@ -71,6 +70,7 @@ enum class GameEnd {
     WinWhite
 };
 
+// Part of GameState, which determines whether the Game has ended
 enum class WinType {
     None,
     Agreement,
@@ -81,14 +81,18 @@ enum class WinType {
 
 std::ostream& operator<<(std::ostream& os, WinType wt);
 
-// Note: The FIDE laws for the 50 Move Rule mention "50 moves by each player",
-//       but the law is interpreted as meaning 50 moves total.
+// Conditions that can justify a Player claiming that the Game has ended in a Draw
+// Note:
+//   * Automatic Draw conditions (5x Rep, 75 Move Rule) are not claimed.
+//   * The FIDE laws for the 50 Move Rule mention "50 moves by each player",
+//     but the law is interpreted as meaning 50 moves total.
 enum DrawableFlag {
     Drawable_None         = 0,
     Drawable_3xRepetition = 1 << 0,
     Drawable_50MoveRule   = 1 << 1
 };
 
+// Part of GameState, which determines whether the Game has ended
 enum DrawFlag {
     Draw_None                  = 0,
     Draw_5xRepetition          = 1 << 0,
@@ -104,8 +108,8 @@ enum DrawFlag {
 
 // ----------
 
-using DrawableFlags = int;
-using DrawFlags     = int;
+using DrawableFlags = int;  // Bitwise OR of DrawableFlag values
+using DrawFlags     = int;  // Bitwise OR of DrawFlag values
 
 // ----------
 
