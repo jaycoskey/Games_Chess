@@ -17,8 +17,13 @@
 #pragma once
 
 #include <array>
+#include <functional>
+#include <iomanip>
 #include <map>
+#include <memory>
 #include <string>
+
+#include <cassert>
 
 #include "util.h"
 #include "geometry.h"

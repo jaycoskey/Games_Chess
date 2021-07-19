@@ -18,6 +18,8 @@
 
 #include <string>
 
+#include <cassert>
+
 #include "util.h"
 #include "geometry.h"
 #include "player.h"

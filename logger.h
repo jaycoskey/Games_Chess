@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 
+#include <cassert>
 
 enum LogLevel {
         LogOff=0,

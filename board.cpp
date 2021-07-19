@@ -66,7 +66,7 @@ ZTable Board::_zobristTable{ [] ()
 
 namespace std
 {
-    template<> struct std::hash<Board>
+    template<> struct hash<Board>
     {
         Hash operator()(const Board& b) const noexcept
         {
