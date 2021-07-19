@@ -89,6 +89,17 @@ struct Pos
     Pos(const Pos& pos) : x(pos.x), y(pos.y) {}
     Pos(const std::string& posStr);  // For testing
 
+    // Rule of three
+    Pos& operator=(const Pos& other) {
+	if (this != &other)
+	{
+            x = other.x;
+            y = other.y;
+	}
+	return *this;
+    }
+    ~Pos() { }
+
     // ---------- Data
     Col x;
     Row y;

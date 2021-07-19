@@ -132,6 +132,20 @@ public:
     Board(bool doPopulate=false);
     Board(const Board& other);
 
+    // Rule of three
+    Board& operator=(const Board& other)
+    {
+	color2PiecePs = other.color2PiecePs;
+        _color2KingP = other._color2KingP;
+        _pos2PieceP = other._pos2PieceP;
+        _currentMoveIndex = other._currentMoveIndex;
+        _boardHashHistory = other._boardHashHistory;
+        _pmocHistory = other._pmocHistory;
+
+	return *this;
+    }
+    ~Board() {}
+
     // ---------- Cell / Piece data - read
     PieceP     pieceAt(const Pos& pos)   const;
     PieceP     pieceAt(Col col, Row row) const;

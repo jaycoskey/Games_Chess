@@ -51,7 +51,7 @@ public:
         time_t now;
         time(&now);
         char suffix[sizeof "20201231_125959 "];
-        strftime(suffix, sizeof suffix, "_%Y%m%d_%H%M%S\0", localtime(&now));
+        strftime(suffix, sizeof suffix, "_%Y%m%d_%H%M%S", localtime(&now));
         _filename = base_filename + suffix + ".log";
         _setOfstream();
     }
