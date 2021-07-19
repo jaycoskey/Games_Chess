@@ -25,31 +25,30 @@
 #include "board.h"
 #include "move.h"
 
-
 // State of Game (Win, Draw, or still in play) determined after each move.
 class GameState {
-public:
+  public:
     GameState();
     GameState(GameEnd gameEnd, WinType winType, DrawFlags drawFlags);
-    GameState( const Board& b, Color c, bool isDrawClaim
-             , const Pos2Moves& validOppPos2Moves
-             );
+    GameState(const Board &b, Color c, bool isDrawClaim,
+              const Pos2Moves &validOppPos2Moves
+              );
 
-    GameEnd   gameEnd()     const { return _gameEnd; };
-    WinType   winType()     const { return _winType; };
-    DrawFlags drawFlags()   const { return _drawFlags; }
-    bool      isCheck()     const { return _isCheck; }
-    bool      isCheckmate() const { return _isCheckmate; }
+    GameEnd gameEnd() const { return _gameEnd; };
+    WinType winType() const { return _winType; };
+    DrawFlags drawFlags() const { return _drawFlags; }
+    bool isCheck() const { return _isCheck; }
+    bool isCheckmate() const { return _isCheckmate; }
 
-private:
-    GameEnd   _gameEnd;
-    WinType   _winType;
+  private:
+    GameEnd _gameEnd;
+    WinType _winType;
     DrawFlags _drawFlags;
 
     // isCheck and isCheckmate are copied into the last Move instance.
-    bool      _isCheck;
-    bool      _isCheckmate;
+    bool _isCheck;
+    bool _isCheckmate;
 
-    friend bool operator<(const GameState& gs1, const GameState& gs2);
-    friend std::ostream& operator<<(std::ostream& os, const GameState& gs);
+    friend bool operator<(const GameState &gs1, const GameState &gs2);
+    friend std::ostream &operator<<(std::ostream &os, const GameState &gs);
 };

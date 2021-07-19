@@ -23,32 +23,28 @@
 #include <vector>
 
 using Short = int;
-using Col   = Short;
-using Row   = Short;
-using Hash  = std::size_t;
+using Col = Short;
+using Row = Short;
+using Hash = std::size_t;
 
-
-enum class Color {
-    Black,
-    White
-};
+enum class Color { Black, White };
 
 constexpr Short VECTOR_CAPACITY_INCR = 25;
 
 // ---------- Collections
 template <typename K, typename V>
-std::vector<std::pair<K, V>> mapToVector(const std::map<K, V>& src)
-{
+std::vector<std::pair<K, V>> mapToVector(const std::map<K, V> &src) {
     return std::vector<std::pair<K, V>>(src.begin(), src.end());
 }
 
 template <typename K, typename V>
-std::ostream& operator<<(std::ostream& os, const std::map<K, V>& m)
-{
+std::ostream &operator<<(std::ostream &os, const std::map<K, V> &m) {
     os << '{';
     int i = 0;
-    for (const auto& [key, val] : m) {
-        if (i++ > 0) { os << ", "; }
+    for (const auto &[key, val] : m) {
+        if (i++ > 0) {
+            os << ", ";
+        }
         os << key << ": " << val;
     }
     os << '}';
@@ -56,19 +52,19 @@ std::ostream& operator<<(std::ostream& os, const std::map<K, V>& m)
 }
 
 template <typename T, typename U>
-std::ostream& operator<<(std::ostream& os, const std::pair<T, U>& p)
-{
+std::ostream &operator<<(std::ostream &os, const std::pair<T, U> &p) {
     os << '(' << p.first << ", " << p.second << ')';
     return os;
 }
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const std::set<T>& items)
-{
+std::ostream &operator<<(std::ostream &os, const std::set<T> &items) {
     os << '{';
     int i = 0;
-    for (const auto& item : items) {
-        if (i++ > 0) { os << ", "; }
+    for (const auto &item : items) {
+        if (i++ > 0) {
+            os << ", ";
+        }
         os << item;
     }
     os << '}';
@@ -76,12 +72,13 @@ std::ostream& operator<<(std::ostream& os, const std::set<T>& items)
 }
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const std::vector<T>& items)
-{
+std::ostream &operator<<(std::ostream &os, const std::vector<T> &items) {
     os << '[';
     int i = 0;
-    for (const auto& item : items) {
-        if (i++ > 0) { os << ", "; }
+    for (const auto &item : items) {
+        if (i++ > 0) {
+            os << ", ";
+        }
         os << item;
     }
     os << ']';
@@ -89,18 +86,16 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& items)
 }
 
 template <typename T>
-const std::set<T> getUnion(const std::set<T>& a, const std::set<T>& b)
-{
+const std::set<T> getUnion(const std::set<T> &a, const std::set<T> &b) {
     std::set<T> result{a};
     result.insert(b.begin(), b.end());
     return result;
 }
 
 template <typename K, typename V>
-std::vector<V> concatMap(const std::map<K, std::vector<V>>& m)
-{
+std::vector<V> concatMap(const std::map<K, std::vector<V>> &m) {
     std::vector<V> result;
-    for (auto& [key, vals] : m) {
+    for (auto &[key, vals] : m) {
         std::copy(vals.begin(), vals.end(), std::back_inserter(result));
     }
     return result;
@@ -113,16 +108,16 @@ constexpr Short COLORS_COUNT = 2;
 Color opponent(Color color);
 std::string to_string(Color c);
 
-std::ostream& operator<<(std::ostream& os, Color c);
+std::ostream &operator<<(std::ostream &os, Color c);
 
 // ---------- Hash
 std::string test_to_string(Hash h);
 
 // ---------- PRNG
-std::mt19937& prng();
+std::mt19937 &prng();
 
 // Used for Zobrist hashing in board.h.
 Hash random_bitstring();
 
 // ---------- String
-std::string repeatString(const std::string& input, int count);
+std::string repeatString(const std::string &input, int count);

@@ -23,18 +23,17 @@
 #include "util.h"
 // #include "geometry.h"
 // #include "player.h"
-#include "piece.h"
 #include "board.h"
-
+#include "piece.h"
 
 TEST(BoardTest, BoardKings) {
     ScopedTracer(__func__);
     Board b{true};
 
-    const Piece& bk = b.king(Color::Black);
+    const Piece &bk = b.king(Color::Black);
     EXPECT_EQ(bk.pieceType(), PieceType::King);
 
-    const Piece& wk = b.king(Color::White);
+    const Piece &wk = b.king(Color::White);
     EXPECT_EQ(wk.pieceType(), PieceType::King);
 }
 
@@ -42,45 +41,46 @@ TEST(BoardTest, BoardPieceCounts) {
     ScopedTracer(__func__);
     Board b{true};
 
-    for (const auto& [c, piecePs] : b.color2PiecePs) {
-        Short kingCount   = 0;
-        Short queenCount  = 0;
-        Short rookCount   = 0;
+    for (const auto &[c, piecePs] : b.color2PiecePs) {
+        Short kingCount = 0;
+        Short queenCount = 0;
+        Short rookCount = 0;
         Short bishopCount = 0;
         Short knightCount = 0;
-        Short pawnCount   = 0;
+        Short pawnCount = 0;
 
-        for (const PieceP& pieceP : piecePs) {
+        for (const PieceP &pieceP : piecePs) {
 
-            switch(pieceP->pieceType()) {
-              case PieceType::King:
+            switch (pieceP->pieceType()) {
+            case PieceType::King:
                 kingCount++;
                 break;
-              case PieceType::Queen:
+            case PieceType::Queen:
                 queenCount++;
                 break;
-              case PieceType::Rook:
+            case PieceType::Rook:
                 rookCount++;
                 break;
-              case PieceType::Bishop:
+            case PieceType::Bishop:
                 bishopCount++;
                 break;
-              case PieceType::Knight:
+            case PieceType::Knight:
                 knightCount++;
                 break;
-              case PieceType::Pawn:
+            case PieceType::Pawn:
                 pawnCount++;
                 break;
-              default:
-                throw new std::invalid_argument("Invalid piece type in board data");
+            default:
+                throw new std::invalid_argument(
+                    "Invalid piece type in board data");
             }
         }
-        EXPECT_EQ(kingCount,   1);
-        EXPECT_EQ(queenCount,  1);
-        EXPECT_EQ(rookCount,   2);
+        EXPECT_EQ(kingCount, 1);
+        EXPECT_EQ(queenCount, 1);
+        EXPECT_EQ(rookCount, 2);
         EXPECT_EQ(bishopCount, 2);
         EXPECT_EQ(knightCount, 2);
-        EXPECT_EQ(pawnCount,   8);
+        EXPECT_EQ(pawnCount, 8);
     }
 }
 

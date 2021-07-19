@@ -26,12 +26,11 @@
 
 using std::cout;
 
-
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     auto result = RUN_ALL_TESTS();
     cout << "========================================\n";
-    test_logger();  // Check output
+    test_logger(); // Check output
 
     return result;
 }

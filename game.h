@@ -18,29 +18,28 @@
 
 #include <vector>
 
-#include "util.h"
-#include "player.h"
 #include "board.h"
-#include "move.h"
 #include "game_state.h"
-
+#include "move.h"
+#include "player.h"
+#include "util.h"
 
 class Game {
-public:
-    static void printConciseMatchSummary(std::vector<GameState>& gss);
-    static void printVerboseMatchSummary(const std::vector<GameState>& gss);
+  public:
+    static void printConciseMatchSummary(std::vector<GameState> &gss);
+    static void printVerboseMatchSummary(const std::vector<GameState> &gss);
 
     Game();
 
     const GameState gameLoop();
-    void play( Short autoReplayCount=0
-             , PlayerType wPlayer=PlayerType::Computer_Random
-             , PlayerType bPlayer=PlayerType::Computer_Random
-             );
+    void play(Short autoReplayCount = 0,
+              PlayerType wPlayer = PlayerType::Computer_Random,
+              PlayerType bPlayer = PlayerType::Computer_Random
+              );
 
-private:
+  private:
     // ---------- Private read methods
-    void _announceGameEnd(const GameState& gs) const;
+    void _announceGameEnd(const GameState &gs) const;
     void _printGameStats() const;
 
     // ---------- Private write methods

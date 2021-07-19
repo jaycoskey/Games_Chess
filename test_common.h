@@ -19,19 +19,18 @@
 #include <iostream>
 #include <string>
 
-#include "util.h"
 #include "geometry.h"
+#include "util.h"
 // #include "player.h"
-#include "piece.h"
 #include "board.h"
-#include "move.h"
-#include "game_state.h"
 #include "game.h"
-
+#include "game_state.h"
+#include "move.h"
+#include "piece.h"
 
 class ScopedTracer {
-public:
-    ScopedTracer(const char* func_name, bool verbose=false)
+  public:
+    ScopedTracer(const char *func_name, bool verbose = false)
         : _func_name{func_name}, _verbose{verbose}
     {
         if (_verbose) {
@@ -43,8 +42,9 @@ public:
             std::cout << "Exiting " << _func_name << "\n";
         }
     }
-private:
-    const char* _func_name;
+
+  private:
+    const char *_func_name;
     bool _verbose;
 };
 
@@ -53,47 +53,46 @@ private:
 //     return std::fabs(a - b) < eps;
 // }
 
-void add_bk_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::Black, PieceType::King,   pos, lmi);
+void add_bk_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::Black, PieceType::King, pos, lmi);
 }
-void add_bq_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::Black, PieceType::Queen,  pos, lmi);
+void add_bq_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::Black, PieceType::Queen, pos, lmi);
 }
-void add_br_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::Black, PieceType::Rook,   pos, lmi);
+void add_br_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::Black, PieceType::Rook, pos, lmi);
 }
-void add_bb_to(Board& b, const std::string& pos, Short lmi=0) {
+void add_bb_to(Board &b, const std::string &pos, Short lmi = 0) {
     b.addPieceTo(Color::Black, PieceType::Bishop, pos, lmi);
 }
-void add_bn_to(Board& b, const std::string& pos, Short lmi=0) {
+void add_bn_to(Board &b, const std::string &pos, Short lmi = 0) {
     b.addPieceTo(Color::Black, PieceType::Knight, pos, lmi);
 }
-void add_bp_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::Black, PieceType::Pawn,   pos, lmi);
+void add_bp_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::Black, PieceType::Pawn, pos, lmi);
 }
 
-void add_wk_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::White, PieceType::King,   pos, lmi);
+void add_wk_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::White, PieceType::King, pos, lmi);
 }
-void add_wq_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::White, PieceType::Queen,  pos, lmi);
+void add_wq_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::White, PieceType::Queen, pos, lmi);
 }
-void add_wr_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::White, PieceType::Rook,   pos, lmi);
+void add_wr_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::White, PieceType::Rook, pos, lmi);
 }
-void add_wb_to(Board& b, const std::string& pos, Short lmi=0) {
+void add_wb_to(Board &b, const std::string &pos, Short lmi = 0) {
     b.addPieceTo(Color::White, PieceType::Bishop, pos, lmi);
 }
-void add_wn_to(Board& b, const std::string& pos, Short lmi=0) {
+void add_wn_to(Board &b, const std::string &pos, Short lmi = 0) {
     b.addPieceTo(Color::White, PieceType::Knight, pos, lmi);
 }
-void add_wp_to(Board& b, const std::string& pos, Short lmi=0) {
-    b.addPieceTo(Color::White, PieceType::Pawn,   pos, lmi);
+void add_wp_to(Board &b, const std::string &pos, Short lmi = 0) {
+    b.addPieceTo(Color::White, PieceType::Pawn, pos, lmi);
 }
 
-template<typename T>
-bool doesContain(const std::vector<T>& vec, const T& val)
-{
+template <typename T>
+bool doesContain(const std::vector<T> &vec, const T &val) {
     return find(vec.begin(), vec.end(), val) != vec.end();
 }
 
@@ -101,7 +100,8 @@ bool doesContain(const std::vector<T>& vec, const T& val)
 Board mkCastlingBoard() {
     Board b{false};
 
-    // Without specifying lastMoveIndex, pieces are treated as though they've never moved.
+    // Without specifying lastMoveIndex, pieces are treated as though they've
+    // never moved.
     add_bk_to(b, "e8");
     add_br_to(b, "a8");
     add_br_to(b, "h8");
@@ -121,7 +121,8 @@ Board mkCheckmatesBoard() {
 
     // Piece constructor called via make_shared ignores lastMoveIndex argument.
     // Workaround by updating MoveIndex history in a separate method call.
-    add_bk_to(b, "a8", 2); b.pieceAt(Pos("a8"))->updateMoveIndexHistory(2);
+    add_bk_to(b, "a8", 2);
+    b.pieceAt(Pos("a8"))->updateMoveIndexHistory(2);
     add_bq_to(b, "h3");
     add_br_to(b, "h5");
     add_bn_to(b, "f4");
@@ -129,7 +130,8 @@ Board mkCheckmatesBoard() {
     add_bp_to(b, "b7");
     add_bp_to(b, "e2");
 
-    add_wk_to(b, "h1", 2); b.pieceAt(Pos("h1"))->updateMoveIndexHistory(2);
+    add_wk_to(b, "h1", 2);
+    b.pieceAt(Pos("h1"))->updateMoveIndexHistory(2);
     add_wb_to(b, "e3");
     add_wb_to(b, "e5");
     add_wn_to(b, "d8");
@@ -143,6 +145,4 @@ Board mkCheckmatesBoard() {
     return b;
 }
 
-void printHRule() {
-    std::cout << "----------------------------------------\n";
-}
+void printHRule() { std::cout << "----------------------------------------\n"; }

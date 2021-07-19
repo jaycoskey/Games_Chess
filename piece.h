@@ -16,83 +16,76 @@
 
 #pragma once
 
-#include "util.h"
 #include "geometry.h"
+#include "util.h"
 
 #include "logger.h"
 
-using MoveIndex         = Short;
-using MoveIndexHistory  = std::vector<bool>;
-using PieceValue        = float;
-
+using MoveIndex = Short;
+using MoveIndexHistory = std::vector<bool>;
+using PieceValue = float;
 
 constexpr PieceValue KING_VALUE = 1'000.0;
 
-enum class PieceType {
-    King,
-    Queen,
-    Rook,
-    Bishop,
-    Knight,
-    Pawn
-};
+enum class PieceType { King, Queen, Rook, Bishop, Knight, Pawn };
 
 constexpr Short PIECE_TYPES_COUNT = 6;
 
-std::ostream& operator<<(std::ostream& os, PieceType pt);
+std::ostream &operator<<(std::ostream &os, PieceType pt);
 
 using OptPieceType = std::optional<PieceType>;
 
-const std::vector<PieceType> pieceTypes {
-    PieceType::King, PieceType::Queen, PieceType::Rook
-    , PieceType::Bishop, PieceType::Knight, PieceType::Pawn
-    };
+const std::vector<PieceType> pieceTypes{
+    PieceType::King,   PieceType::Queen,
+    PieceType::Rook,   PieceType::Bishop,
+    PieceType::Knight, PieceType::Pawn
+};
 
 // ========================================
 // Piece
 
 // class Board;
 
-class Piece
-{
-public:
+class Piece {
+  public:
     // Static method
     static PieceValue pieceValue(PieceType pt);
 
     // Constructor
-    Piece(Color color, PieceType pt, Short index, MoveIndex lastMoveIndex=0);
+    Piece(Color color, PieceType pt, Short index, MoveIndex lastMoveIndex = 0);
 
     // Public read methods
     Color color() const { return _color; }
-    bool  isBlack() const { return _color == Color::Black; }
-    bool  isWhite() const { return _color == Color::White; }
+    bool isBlack() const { return _color == Color::Black; }
+    bool isWhite() const { return _color == Color::White; }
 
     PieceType pieceType() const { return _pieceType; }
 
-    Col   col() const { return _pos.x; }
-    Row   row() const { return _pos.y; }
-    Pos   pos() const { return _pos; }
+    Col col() const { return _pos.x; }
+    Row row() const { return _pos.y; }
+    Pos pos() const { return _pos; }
     Color squareColor() const { return _pos.squareColor(); }
 
     bool hasMoved() const { return lastMoveIndex() > 0; }
     MoveIndex lastMoveIndex() const;
 
     // Public write methods
-    void moveTo(const Pos& pos) { _pos.moveTo(pos); }
+    void moveTo(const Pos &pos) { _pos.moveTo(pos); }
     void rollBackLastMoveIndex(MoveIndex mi);
     void setPieceType(PieceType pt) { _pieceType = pt; }
     void updateMoveIndexHistory(MoveIndex mi);
 
     // Operator
-    bool operator<(const Piece& other) { return _pos < other.pos(); }
+    bool operator<(const Piece &other) { return _pos < other.pos(); }
 
-private:
-    Color     _color;
+  private:
+    Color _color;
     PieceType _pieceType;
-    Pos       _pos;
+    Pos _pos;
 
-    // First move is at ...[1]. The value at ...[0] acts as a "reverse sentinel".
+    // First move is at ...[1]. The value at ...[0] acts as a "reverse
+    // sentinel".
     MoveIndexHistory _moveIndexHistory;
 
-    friend std::ostream& operator<<(std::ostream& os, const Piece& piece);
+    friend std::ostream &operator<<(std::ostream &os, const Piece &piece);
 };
